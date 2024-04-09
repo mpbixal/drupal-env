@@ -109,9 +109,9 @@
           "path": "scaffolding/orch/post_deploy.sh",
           "overwrite": true
         },
-        "[project-root]/orch/show_files.sh": {
+        "[project-root]/orch/show_file.sh": {
           "mode": "replace",
-          "path": "scaffolding/orch/show_files.sh",
+          "path": "scaffolding/orch/show_file.sh",
           "overwrite": true
         },
         "[project-root]/RoboEnv/Robo/Plugin/Commands/.editorconfig": {
