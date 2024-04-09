@@ -29,6 +29,11 @@
   },
   "scripts": {
     "pre-package-install": [
+      "echo hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+      "[ ! -f web/sites/default/settings.php ] && cp web/sites/default/default.settings.php web/sites/default/settings.php"
+    ],
+    "pre-package-update": [
+      "echo updateeeeeeeeeeeeeeeeeeee",
       "[ ! -f web/sites/default/settings.php ] && cp web/sites/default/default.settings.php web/sites/default/settings.php"
     ]
   },
