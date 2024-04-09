@@ -43,7 +43,7 @@
         },
         "[web-root]/sites/default/settings.php": {
           "append": "scaffolding/drupal_config/settings_additions.php",
-          "force-append": true,
+          "force-append": true
         },
         "[web-root]/sites/default/settings.drupal_env.php": {
           "mode": "replace",
