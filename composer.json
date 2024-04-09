@@ -131,7 +131,7 @@
         },
         "[project-root]/drush": {
           "mode": "replace",
-          "path": "scaffolding/shortcuts/php.sh",
+          "path": "scaffolding/shortcuts/drush",
           "overwrite": true
         },
         "[project-root]/php": {
