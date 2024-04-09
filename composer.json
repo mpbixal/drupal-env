@@ -36,7 +36,7 @@
           "overwrite": true
         },
         "[web-root]/sites/default/settings.php": {
-          "apend": "scaffolding/drupal_config/settings_additions.php",
+          "append": "scaffolding/drupal_config/settings_additions.php",
           "force-append": true
         },
         "[web-root]/sites/default/settings.drupal_env.php": {
