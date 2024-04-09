@@ -27,8 +27,14 @@
       "php": "8.0.17"
     }
   },
+  "scripts": {
+    "pre-drupal-scaffold-cmd": [
+      "ls -al && echo 'mooooo'"
+    ]
+  },
   "extra": {
     "drupal-scaffold": {
+      "gitignore": false,
       "file-mapping": {
         "[web-root]/sites/updated.development.services.yml": {
           "mode": "replace",
@@ -38,7 +44,6 @@
         "[web-root]/sites/default/settings.php": {
           "append": "scaffolding/drupal_config/settings_additions.php",
           "force-append": true,
-          "default": "[web-root]/sites/default/default.settings.php"
         },
         "[web-root]/sites/default/settings.drupal_env.php": {
           "mode": "replace",
