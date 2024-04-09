@@ -27,11 +27,6 @@
       "php": "8.0.17"
     }
   },
-  "scripts": {
-    "pre-drupal-scaffold-cmd": [
-      "ls -al && echo 'mooooo'"
-    ]
-  },
   "extra": {
     "drupal-scaffold": {
       "gitignore": false,
@@ -124,7 +119,7 @@
           "path": "scaffolding/Robo/editorconfig",
           "overwrite": true
         },
-        "[project-root]/DrupalEnv/Robo/Plugin/Commands/CommonCommands.php": {
+        "[project-root]/RoboEnv/Robo/Plugin/Commands/CommonCommands.php": {
           "mode": "replace",
           "path": "scaffolding/Robo/CommonCommands.php",
           "overwrite": true

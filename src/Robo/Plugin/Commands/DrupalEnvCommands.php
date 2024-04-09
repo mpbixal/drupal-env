@@ -13,41 +13,49 @@ class DrupalEnvCommands extends Tasks
 {
 
   /**
-   * Allows installation
+   * Do tasks that are required before the scaffolding can be applied.
    *
    * @command drupal-env:init
    */
   public function dplInit() {
-    $this->_exec('lando drush theme:enable claro');
-    $this->_exec('lando drush config-set system.theme admin claro -y');
-    $this->_exec('lando drush config-set node.settings use_admin_theme 1 -y');
-    $this->_exec('lando drush theme:enable olivero');
-    $this->_exec('lando drush config-set system.theme default olivero -y');
+    $composer_path = 'composer';
+    if (!`which $composer_path`) {
+      if (!`which docker`) {
+        throw new \Exception('Either composer or docker must be installed to continue');
+      }
+      $composer_path = 'docker run --rm -i --tty -v $PWD:/app composer:2';
+    }
+    $composer_json = json_decode(file_get_contents('composer.json'), true);
+    // Make sure that our scaffolding can run.
+    if (empty($composer_json['extra']['drupal-scaffold']['allowed-packages']) || !in_array('mpbixal/drupal-env', $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
+      $this->_exec($composer_path . ' config extra.drupal-scaffold.allowed-packages --json --merge \'["mpbixal/drupal-env"]\'');
+    }
+    $web_root = $composer_json['extra']['drupal-scaffold']['locations']['web-root'] ?? 'web';
+    $web_root = rtrim($web_root, '/');
+    // Ensure that settings.php is in place so it can be appended to by the
+    // scaffolding.
+    if (!file_exists("$web_root/sites/default/settings.php") && file_exists("$web_root/sites/default/default.settings.php")) {
+      $this->_copy("$web_root/sites/default/default.settings.php", "$web_root/sites/default/settings.php");
+    }
+    // Add autoloading so that the robo tasks that are scaffolded in will work.
+    if (empty($composer_json['autoload']['psr-4']) || !in_array('./RoboEnv/', $composer_json['autoload']['psr-4'] ?? [])) {
+      $composer_json['autoload']['psr-4']['RoboEnv\\'] = './RoboEnv/';
+      // composer config does not support 'autoload'.
+      file_put_contents('composer.json', json_encode($composer_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+    }
 
-    $this->taskComposerRequire('./composer')
-      ->dependency('drupal/core-dev')
-      ->dev()
-      ->run();
+    // Create the config sync directory.
+    if (!is_dir('config/sync')) {
+      $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
+    }
 
-    $this->taskComposerRequire('./composer')
-      ->dependency('mattsqd/robovalidate', '@alpha')
-      ->dependency('platformsh/config-reader')
-      ->dependency('drupal/admin_toolbar')
-      ->dependency('drupal/devel')
-      ->dependency('drupal/disable_user_1_edit')
-      ->dependency('drupal/menu_admin_per_menu')
-      ->dependency('drupal/redis')
-      ->dependency('drupal/role_delegation')
-      ->dependency('drupal/search_api_solr')
-      ->dependency('drupal/twig_tweak')
-      ->dependency('drupal/twig_field_value')
-      ->run();
+    // Ensure .gitignore exists so it can be appended to.
+    if (!file_exists('.gitignore')) {
+      $this->taskFilesystemStack()->touch('.gitignore')->run();
+    }
 
-    $this->_exec('lando drush en -y admin_toolbar_search devel disable_user_1_edit menu_admin_per_menu redis role_delegation search_api_solr twig_tweak twig_field_value');
-
-    // Create the config sync dir and export config to it.
-    $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
-    $this->_exec('lando drush cex -y');
+    // Now that everything is ready, run the scaffolding.
+    $this->_exec($composer_path . ' drupal:scaffold');
   }
 
 }
