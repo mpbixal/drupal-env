@@ -11,7 +11,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "DrupalEnv\\": "./DrupalEnv/"
+      "DrupalEnv\\": "./src/"
     }
   },
   "type": "robo-tasks",
@@ -37,7 +37,7 @@
         },
         "[web-root]/sites/default/settings.php": {
           "mode": "replace",
-          "path": "scaffolding/drupal_config/setting_additions.php",
+          "path": "scaffolding/drupal_config/settings_additions.php",
           "force-append": true
         },
         "[web-root]/sites/default/settings.drupal_env.php": {
