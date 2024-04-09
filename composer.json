@@ -30,7 +30,7 @@
   "extra": {
     "drupal-scaffold": {
       "initial": {
-        "sites/default/default.settings.php": "sites/default/settings.php"
+        "[web-root]/sites/default/default.settings.php": "[web-root]/sites/default/settings.php"
       },
       "file-mapping": {
         "[web-root]/sites/updated.development.services.yml": {
