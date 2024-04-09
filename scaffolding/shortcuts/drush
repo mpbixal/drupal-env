@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")" || exit
+
+# If the .env file exists. use it to populate BIN_PATH_DRUSh.
+if [ -f .env ]; then
+  . .env
+fi
+
+# If there is no path to php override, use lando.
+if [ -z "${BIN_PATH_DRUSH}" ]; then
+  BIN_PATH_PHP="lando drush"
+else
+  set -x
+fi
+
+${BIN_PATH_PHP} "$@"

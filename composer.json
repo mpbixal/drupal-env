@@ -1,0 +1,175 @@
+{
+  "name": "mattsqd/drupal-env",
+  "description": "Common functional for working with local and remote Drupal environments.",
+  "minimum-stability": "stable",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "mpbixal",
+      "email": "121190622+mpbixal@users.noreply.github.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "DrupalEnv\\": "./DrupalEnv/"
+    }
+  },
+  "type": "robo-tasks",
+  "require": {
+    "consolidation/robo": "^3.0.9 || ^4.0.1",
+    "drupal/core-composer-scaffold": "^10.0",
+    "php": ">=8.0.17"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "platform": {
+      "php": "8.0.17"
+    }
+  },
+  "extra": {
+    "drupal-scaffold": {
+      "file-mapping": {
+        "[web-root]/sites/updated.development.services.yml": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/updated.development.services.yml",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/setting_additions.php",
+          "force-append": true
+        },
+        "[web-root]/sites/default/settings.drupal_env.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.drupal_env.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/updated.settings.local.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/updated.settings.local.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.memcache.container_pure.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.memcache.container_pure.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.memcache.container_tags_db.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.memcache.container_tags_db.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.memcache.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.memcache.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.redis.container.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.redis.container.php",
+          "overwrite": true
+        },
+        "[web-root]/sites/default/settings.redis.php": {
+          "mode": "replace",
+          "path": "scaffolding/drupal_config/settings.redis.php",
+          "overwrite": true
+        },
+        "[project-root]/.gitignore": {
+          "append": "scaffolding/gitignore-additions.txt",
+          "force-append": true
+        },
+        "[project-root]/.environment": {
+          "mode": "replace",
+          "path": "scaffolding/environment_config/environment",
+          "overwrite": true
+        },
+        "[project-root]/.lando.yml": {
+          "mode": "replace",
+          "path": "scaffolding/environment_config/lando.yml",
+          "overwrite": true
+        },
+        "[project-root]/.platform.app.yaml": {
+          "mode": "replace",
+          "path": "scaffolding/environment_config/platform.app.yaml",
+          "overwrite": true
+        },
+        "[project-root]/.platform/routes.yaml": {
+          "mode": "replace",
+          "path": "scaffolding/environment_config/routes.yaml",
+          "overwrite": true
+        },
+        "[project-root]/.platform/services.yaml": {
+          "mode": "replace",
+          "path": "scaffolding/environment_config/services.yaml",
+          "overwrite": true
+        },
+        "[project-root]/orch/build.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/build.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/build_node.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/build_node.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/deploy.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/deploy.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/deploy_install.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/deploy_install.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/deploy_update.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/deploy_update.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/post_deploy.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/post_deploy.sh",
+          "overwrite": true
+        },
+        "[project-root]/orch/show_files.sh": {
+          "mode": "replace",
+          "path": "scaffolding/orch/show_files.sh",
+          "overwrite": true
+        },
+        "[project-root]/RoboEnv/Robo/Plugin/Commands/.editorconfig": {
+          "mode": "replace",
+          "path": "scaffolding/Robo/editorconfig",
+          "overwrite": true
+        },
+        "[project-root]/DrupalEnv/Robo/Plugin/Commands/CommonCommands.php": {
+          "mode": "replace",
+          "path": "scaffolding/Robo/CommonCommands.php",
+          "overwrite": true
+        },
+        "[project-root]/composer": {
+          "mode": "replace",
+          "path": "scaffolding/shortcuts/composer",
+          "overwrite": true
+        },
+        "[project-root]/drush": {
+          "mode": "replace",
+          "path": "scaffolding/shortcuts/php.sh",
+          "overwrite": true
+        },
+        "[project-root]/php": {
+          "mode": "replace",
+          "path": "scaffolding/shortcuts/php",
+          "overwrite": true
+        },
+        "[project-root]/robo": {
+          "mode": "replace",
+          "path": "scaffolding/shortcuts/robo",
+          "overwrite": true
+        }
+      }
+    }
+  }
+}
