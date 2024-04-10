@@ -17,7 +17,7 @@ class DrupalEnvCommands extends Tasks
    *
    * @command drupal-env:scaffold
    */
-  public function drupalEnvScaffold() {
+  public function drupalEnvScaffold(): void {
     $composer_path = 'composer';
     if (!`which $composer_path`) {
       if (!`which docker`) {
@@ -26,10 +26,7 @@ class DrupalEnvCommands extends Tasks
       $composer_path = 'docker run --rm -i --tty -v $PWD:/app composer:2';
     }
 
-    // Make sure that our scaffolding can run.
-    $this->enableScaffolding();
-
-    // Ensure that settings.php is in place so it can be appended to by the
+    // Ensure that settings.php is in place, so it can be appended to by the
     // scaffolding.
     $web_root = $composer_json['extra']['drupal-scaffold']['locations']['web-root'] ?? 'web';
     $web_root = rtrim($web_root, '/');
@@ -39,7 +36,7 @@ class DrupalEnvCommands extends Tasks
 
     // Add autoloading so that the robo tasks that are scaffolded in will work.
     $composer_json = $this->getComposerJson();
-    if (empty($composer_json['autoload']['psr-4']) || !in_array('./RoboEnv/', $composer_json['autoload']['psr-4'] ?? [])) {
+    if (!in_array('./RoboEnv/', $composer_json['autoload']['psr-4'] ?? [])) {
       $composer_json['autoload']['psr-4']['RoboEnv\\'] = './RoboEnv/';
       $this->saveComposerJson($composer_json);
     }
@@ -49,16 +46,19 @@ class DrupalEnvCommands extends Tasks
       $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
     }
 
-    // Ensure .gitignore exists so it can be appended to.
+    // Ensure .gitignore exists, so it can be appended to.
     if (!file_exists('.gitignore')) {
       $this->taskFilesystemStack()->touch('.gitignore')->run();
     }
+
+    // Make sure that our scaffolding can run.
+    $this->enableScaffolding();
 
     // Now that everything is ready, run the scaffolding.
     $this->_exec($composer_path . ' drupal:scaffold');
 
     $this->disableScaffolding();
-    $this->yell('The scaffolding has been updated and disable from running until this is called again.');
+    $this->yell('The scaffolding has been updated and disabled from running until this is called again.');
   }
 
   /**
@@ -84,31 +84,39 @@ class DrupalEnvCommands extends Tasks
   }
 
   /**
-   * Turn on scaffolding in composer.json.
+   * Turn on scaffolding in composer.json for a single $project.
+   *
+   * @var string $project
+   *   A project that has scaffolding.
    *
    * @return void
    */
-  protected function enableScaffolding(): void
+  protected function enableScaffolding(string $project = 'mpbixal/drupal-env'): void
   {
     $composer_json = $this->getComposerJson();
-    if (empty($composer_json['extra']['drupal-scaffold']['allowed-packages']) || !in_array('mpbixal/drupal-env', $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
-      $composer_json['extra']['drupal-scaffold']['allowed-packages'] = ['mpbixal/drupal-env'];
+    if (!in_array($project, $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
+      $composer_json['extra']['drupal-scaffold']['allowed-packages'] = [$project];
       $this->saveComposerJson($composer_json);
       //$this->_exec($composer_path . ' config extra.drupal-scaffold.allowed-packages --json --merge \'["mpbixal/drupal-env"]\'');
     }
   }
 
   /**
-   * Turn off scaffolding in composer.json.
+   * Turn off scaffolding in composer.json for a single $project.
+   *
+   * @var string $project
+   *   A project that has scaffolding.
    *
    * @return void
+   *
    */
-  protected function disableScaffolding(): void
+  protected function disableScaffolding(string $project = 'mpbixal/drupal-env'): void
   {
     $composer_json = $this->getComposerJson();
-    if (!empty($composer_json['extra']['drupal-scaffold']['allowed-packages']) && false !== $key = array_search('mpbixal/drupal-env', $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
+    if (false !== $key = array_search($project, $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
       unset($composer_json['extra']['drupal-scaffold']['allowed-packages'][$key]);
       $this->saveComposerJson($composer_json);
     }
   }
+
 }
