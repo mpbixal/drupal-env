@@ -1,5 +1,6 @@
 <?php
 
+namespace RoboEnv\Robo\Plugin\Commands;
 
 use Robo\Result;
 use Robo\Tasks;
