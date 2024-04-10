@@ -61,7 +61,7 @@ class DrupalEnvCommands extends Tasks
       // Only search by this partial text which should never change, that way
       // if the files that get modified get updated, then this command will be
       // updated instead of adding a new.
-      return strpos($post_drupal_scaffold_cmds[$key], 'Allowing orchestration files to be executed') !== false;
+      return str_contains($post_drupal_scaffold_cmds[$key], 'Allowing orchestration files to be executed');
     }, ARRAY_FILTER_USE_KEY);
     $post_drupal_scaffold_cmd = "echo 'Allowing orchestration files to be executed...' & chmod +x ./orch/*.sh ./composer ./php ./robo ./drush";
     if (!empty($results)) {
