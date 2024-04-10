@@ -54,6 +54,28 @@ class DrupalEnvCommands extends Tasks
       $this->taskFilesystemStack()->touch('.gitignore')->run();
     }
 
+    // Ensure orchestration and shortcuts can be executed.
+    $composer_json = $this->getComposerJson();
+    $post_drupal_scaffold_cmds = $composer_json['scripts']['post-drupal-scaffold-cmd'] ?? [];
+    $results = array_filter($post_drupal_scaffold_cmds, function($key) use ($post_drupal_scaffold_cmds) {
+      // Only search by this partial text which should never change, that way
+      // if the files that get modified get updated, then this command will be
+      // updated instead of adding a new.
+      return strpos($post_drupal_scaffold_cmds[$key], 'Allowing orchestration files to be executed') !== false;
+    }, ARRAY_FILTER_USE_KEY);
+    $post_drupal_scaffold_cmd = "echo 'Allowing orchestration files to be executed...' & chmod +x ./orch/*.sh ./composer ./php ./robo ./drush";
+    if (!empty($results)) {
+      foreach ($results as $key => $result) {
+        if ($result !== $post_drupal_scaffold_cmd) {
+          $composer_json['scripts']['post-drupal-scaffold-cmd'][$key] = $post_drupal_scaffold_cmd;
+          $this->saveComposerJson($composer_json);
+        }
+      }
+    } else {
+      $composer_json['scripts']['post-drupal-scaffold-cmd'][] = $post_drupal_scaffold_cmd;
+      $this->saveComposerJson($composer_json);
+    }
+
     // Make sure that our scaffolding can run.
     $this->enableScaffolding();
 
@@ -67,8 +89,7 @@ class DrupalEnvCommands extends Tasks
       $this->_exec($composer_path . ' update --lock');
     }
 
-    $this->yell('The scaffolding has been updated and disabled from running until this is called again.');
-
+    $this->yell('The scaffolding has been enabled and run, bringing in any new scaffolded files. Afterwords, it was disabled so that scaffolding is not updated every time composer install is called.');
   }
 
   /**
