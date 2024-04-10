@@ -1,12 +1,9 @@
-#### Added by Bixal project scaffolding ####
+#### Added by Drupal Env project scaffolding ####
 
 # Ignore .env files as they are personal
 /.env
-/.lando.local.yml
 # Ensure composer.log is NOT ignored.
 !/composer.log
-# Platform build directory for Lando.
-/.platform/local
 # Mount directories created for platform.sh
 /tmp
 /private
@@ -72,4 +69,4 @@
 !/web/sites/default/settings.redis.php
 !/web/profiles/custom
 
-#### End added by Bixal project scaffolding ####
+#### End added by Drupal Env project scaffolding ####
