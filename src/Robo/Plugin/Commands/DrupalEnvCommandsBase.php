@@ -42,9 +42,9 @@ abstract class DrupalEnvCommandsBase extends Tasks {
    */
   protected function getComposerPath(): string
   {
-    if (`which ./composer`) {
+    /*if (`which ./composer`) {
       return './composer';
-    } elseif (`which composer`) {
+    } else*/if (`which composer`) {
       return 'composer';
     } elseif (`which docker`) {
       return 'docker run --rm -i --tty -v $PWD:/app composer:2';
