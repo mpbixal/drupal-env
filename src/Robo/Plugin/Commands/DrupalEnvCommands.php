@@ -15,9 +15,9 @@ class DrupalEnvCommands extends Tasks
   /**
    * Update the environment so that the scaffolding can happen, and run it.
    *
-   * @command drupal-env:init
+   * @command drupal-env:scaffold
    */
-  public function drupalEnvInit(): void {
+  public function drupalEnvScaffold(): void {
     $composer_path = 'composer';
     if (!`which $composer_path`) {
       if (!`which docker`) {
