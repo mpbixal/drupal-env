@@ -26,6 +26,10 @@ class DrupalEnvCommands extends Tasks
       $composer_path = 'docker run --rm -i --tty -v $PWD:/app composer:2';
     }
 
+    $composer_json_hash_before = md5_file('composer.json');
+
+    $composer_json = $this->getComposerJson();
+
     // Ensure that settings.php is in place, so it can be appended to by the
     // scaffolding.
     $web_root = $composer_json['extra']['drupal-scaffold']['locations']['web-root'] ?? 'web';
@@ -34,14 +38,10 @@ class DrupalEnvCommands extends Tasks
       $this->_copy("$web_root/sites/default/default.settings.php", "$web_root/sites/default/settings.php");
     }
 
-    $composer_json_updated = false;
-
     // Add autoloading so that the robo tasks that are scaffolded in will work.
-    $composer_json = $this->getComposerJson();
     if (!in_array('./RoboEnv/', $composer_json['autoload']['psr-4'] ?? [])) {
       $composer_json['autoload']['psr-4']['RoboEnv\\'] = './RoboEnv/';
       $this->saveComposerJson($composer_json);
-      $composer_json_updated = true;
     }
 
     // Create the config sync directory.
@@ -55,21 +55,18 @@ class DrupalEnvCommands extends Tasks
     }
 
     // Make sure that our scaffolding can run.
-    if ($this->enableScaffolding()) {
-      $composer_json_updated = true;
-    }
+    $this->enableScaffolding();
 
     // Now that everything is ready, run the scaffolding.
     $this->_exec($composer_path . ' drupal:scaffold');
 
-    if ($this->disableScaffolding()) {
-      $composer_json_updated = true;
-    }
+    $this->disableScaffolding();
 
     // If composer.json was updated, the lock file also has to be updated.
-    if ($composer_json_updated) {
+    if ($composer_json_hash_before !== md5_file('composer.json')) {
       $this->_exec($composer_path . ' update --lock');
     }
+
     $this->yell('The scaffolding has been updated and disabled from running until this is called again.');
 
   }
@@ -109,7 +106,7 @@ class DrupalEnvCommands extends Tasks
   {
     $composer_json = $this->getComposerJson();
     if (!in_array($project, $composer_json['extra']['drupal-scaffold']['allowed-packages'] ?? [])) {
-      $composer_json['extra']['drupal-scaffold']['allowed-packages'] = [$project];
+      $composer_json['extra']['drupal-scaffold']['allowed-packages'][] = $project;
       $this->saveComposerJson($composer_json);
       //$this->_exec($composer_path . ' config extra.drupal-scaffold.allowed-packages --json --merge \'["mpbixal/drupal-env"]\'');
       return true;
