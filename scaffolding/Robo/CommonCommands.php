@@ -272,11 +272,4 @@ class CommonCommands extends Tasks
         return true;
     }
 
-    /**
-     */
-    protected function py()
-    {
-        $this->_exec('/usr/bin/python3 ./test.py');
-    }
-
 }
