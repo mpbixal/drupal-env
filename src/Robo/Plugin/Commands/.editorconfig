@@ -1,0 +1,5 @@
+# @see http://editorconfig.org/
+
+# All files.
+[*]
+indent_size = 4

@@ -7,14 +7,14 @@ if [ -f .env ]; then
   . .env
 fi
 
-# If this was run through 'lando composer'.
+# If this was run through your local environment, use its composer.
 # BIN_PATH_COMPOSER can also be set with an 'env' property in tooling.
-if [ -n "${LANDO_INFO}" ]; then
+if [ -n "${DRUPAL_ENV_LOCAL}" ]; then
   BIN_PATH_COMPOSER="composer"
 fi
 
 EXIT_STATUS=0
-if [ -n "${BIN_PATH_COMPOSER}" ]; then
+if [ "${DRUPAL_ENV_LOCAL}" = ]; then
   set -x
   ${BIN_PATH_COMPOSER} "$@" || EXIT_STATUS=$?
   set +x
