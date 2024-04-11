@@ -22,7 +22,7 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
    *
    * @command drupal-env:scaffold
    */
-  public function drupalEnvScaffold(): void
+  public function scaffold(): void
   {
     $this->updateScaffolding();
   }
