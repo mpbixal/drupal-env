@@ -1,1 +1,4 @@
 .idea
+vendor
+autoload.php
+composer.lock

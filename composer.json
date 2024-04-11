@@ -25,6 +25,9 @@
     "sort-packages": true,
     "platform": {
       "php": "8.0.17"
+    },
+    "allow-plugins": {
+      "drupal/core-composer-scaffold": false
     }
   },
   "extra": {
