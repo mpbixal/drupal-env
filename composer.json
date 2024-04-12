@@ -79,8 +79,13 @@
                     "overwrite": true
                 },
                 "[project-root]/.gitignore": {
-                    "append": "scaffolding/gitignore-additions.txt",
+                    "append": "scaffolding/drupal_config/root-gitignore-additions.txt",
                     "force-append": true
+                },
+                "[web-root]/.gitignore": {
+                    "mode": "replace",
+                    "path": "scaffolding/drupal_config/web-gitignore",
+                    "overwrite": true
                 },
                 "[project-root]/.editorconfig": {
                     "append": "scaffolding/editorconfig",

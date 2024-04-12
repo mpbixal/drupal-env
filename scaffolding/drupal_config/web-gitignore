@@ -1,0 +1,9 @@
+#### Added by Drupal Env project scaffolding ####
+
+/core
+/*/contrib
+/sites/*/files
+# Ignore test environment.
+/sites/simpletest
+
+#### End added by Drupal Env project scaffolding ####
