@@ -7,25 +7,22 @@ if [ -f .env ]; then
   . .env
 fi
 
-# If this was run through your local environment, use its composer.
-# BIN_PATH_COMPOSER can also be set with an 'env' property in tooling.
-if [ -n "${DRUPAL_ENV_LOCAL}" ]; then
-  BIN_PATH_COMPOSER="composer"
-fi
+BIN_PATH_COMPOSER=composer
 
 EXIT_STATUS=0
-if [ "${DRUPAL_ENV_LOCAL}" = ]; then
-  set -x
-  ${BIN_PATH_COMPOSER} "$@" || EXIT_STATUS=$?
-  set +x
-else
-  # If there is no path to composer override, use the composer binary in the working path of Lando.
-  # Format the arguments within single quotes
-  formatted_args=$(printf "'%s' " "$@")
-  set -x
-  lando ssh -c "composer $formatted_args" || EXIT_STATUS=$?
-  set +x
+
+if ! command -v "${BIN_PATH_COMPOSER}" &> /dev/null; then
+  if command -v docker &> /dev/null; then
+    BIN_PATH_COMPOSER='docker run --rm -i --tty -v $PWD:/app composer:2'
+  else
+    echo 'Either composer or docker must be installed to continue'
+  fi
+  exit 1
 fi
+
+set -x
+${BIN_PATH_COMPOSER} "$@" || EXIT_STATUS=$?
+set +x
 
 # Support MacOS and Linux.
 # https://stackoverflow.com/questions/8996820/how-to-create-md5-hash-in-bash-in-mac-os-x/8996924#8996924
