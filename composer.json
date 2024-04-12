@@ -32,7 +32,6 @@
     },
     "extra": {
         "drupal-scaffold": {
-            "gitignore": false,
             "file-mapping": {
                 "[web-root]/sites/updated.development.services.yml": {
                     "mode": "replace",
