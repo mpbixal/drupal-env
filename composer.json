@@ -88,7 +88,7 @@
                     "overwrite": true
                 },
                 "[project-root]/.editorconfig": {
-                    "append": "scaffolding/editorconfig",
+                    "append": "scaffolding/ide_config/root-editorconfig",
                     "force-append": true
                 },
                 "[project-root]/orch/build.sh": {
