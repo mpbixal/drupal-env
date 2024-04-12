@@ -67,7 +67,7 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
       // updated instead of adding a new.
       return str_contains($post_drupal_scaffold_cmds[$key], 'Allowing orchestration files to be executed');
     }, ARRAY_FILTER_USE_KEY);
-    $post_drupal_scaffold_cmd = "echo 'Allowing orchestration files to be executed...' & chmod +x ./orch/*.sh ./composer ./php ./robo ./drush";
+    $post_drupal_scaffold_cmd = "echo 'Allowing orchestration files to be executed...' & chmod -f +x ./orch/*.sh ./composer ./php ./robo ./drsh";
     if (!empty($results)) {
       foreach ($results as $key => $result) {
         if ($result !== $post_drupal_scaffold_cmd) {
