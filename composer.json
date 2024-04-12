@@ -83,9 +83,8 @@
                     "force-append": true
                 },
                 "[project-root]/.editorconfig": {
-                    "mode": "replace",
-                    "path": "scaffolding/editorconfig",
-                    "overwrite": true
+                    "append": "scaffolding/editorconfig",
+                    "force-append": true
                 },
                 "[project-root]/orch/build.sh": {
                     "mode": "replace",
