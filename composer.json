@@ -141,9 +141,9 @@
                     "path": "scaffolding/shortcuts/composer",
                     "overwrite": true
                 },
-                "[project-root]/drush": {
+                "[project-root]/drsh": {
                     "mode": "replace",
-                    "path": "scaffolding/shortcuts/drush",
+                    "path": "scaffolding/shortcuts/drsh",
                     "overwrite": true
                 },
                 "[project-root]/php": {
