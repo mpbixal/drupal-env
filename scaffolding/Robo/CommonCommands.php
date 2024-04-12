@@ -3,6 +3,7 @@
 namespace RoboEnv\Robo\Plugin\Commands;
 
 use Robo\Result;
+use Robo\Robo;
 use Robo\Tasks;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Yaml\Yaml;
@@ -23,6 +24,14 @@ class CommonCommands extends Tasks
      * @var string
      */
     protected string $path_to_drush;
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        Robo::loadConfiguration(['roboConfDrupalEnv.yml']);
+    }
 
     /**
      * Create a v4 UUID.
@@ -65,6 +74,18 @@ class CommonCommands extends Tasks
             Yaml::parse($file_contents);
         }
         return (bool) file_put_contents($file_path, Yaml::dump($file_contents, 5, 2));
+    }
+
+    /**
+     * Save the robo config.
+     *
+     * @return bool
+     */
+    protected function saveConfig(): bool
+    {
+        $config = Robo::Config()->export();
+        unset($config['options']);
+        return $this->saveYml('roboConfDrupalEnv.yml', $config);
     }
 
     /**
@@ -256,6 +277,8 @@ class CommonCommands extends Tasks
     }
 
     /**
+     * Check if Drupal is installed.
+     *
      * @return bool
      *
      * @throws \Exception
@@ -270,6 +293,219 @@ class CommonCommands extends Tasks
             throw new \Exception('Drupal is not installed or the environment is not started.');
         }
         return true;
+    }
+
+
+    /**
+     * Is the $project installed in Composer?
+     *
+     * @param string $project
+     *
+     * @return bool
+     */
+    protected function isDependencyInstalled(string $project): bool
+    {
+        return $this->_exec("composer show $project  > /dev/null 2>&1")->wasSuccessful();
+    }
+
+    /**
+     * Is the composer package installed?
+     *
+     * @param SymfonyStyle $io
+     * @param bool $ask_before_install
+     *   If true, ask before installing.
+     * @param array $projects
+     *   An array with keys of project name and description values.
+     * @param bool $dev_dep
+     *   If true, all $projects will be installed as dev dependencies.
+     * @param bool $ask_dev_dep
+     *   If true, it will ask for each dep if it should be a dev dep.
+     * @return void
+     */
+    protected function installDependencies(SymfonyStyle $io, bool $ask_before_install, array $projects = [], bool $dev_dep = false, bool $ask_dev_dep = false): void
+    {
+        if (!$ask_before_install && $ask_dev_dep) {
+            throw new \Exception('You must ask before install if you want to ask for a dev dependency.');
+        }
+        $_self = $this;
+        $not_installed_projects = array_filter($projects, static function (string $key) use ($projects, $_self): bool {
+            return !$_self->isDependencyInstalled($key);
+        }, ARRAY_FILTER_USE_KEY);
+        // All installed, nothing to do.
+        if (empty($not_installed_projects)) {
+            return;
+        }
+        if ($ask_before_install) {
+            $install_projects = [];
+            $install_projects_dev = [];
+            foreach ($not_installed_projects as $not_installed_project => $description) {
+                $dev_dep_label = '';
+                if ($dev_dep && !$ask_dev_dep) {
+                    $dev_dep_label = ' (Development only dependency)';
+                }
+                if ($io->confirm("Would you like to install $not_installed_project$dev_dep_label? $description")) {
+                    if ($dev_dep_label || ($ask_dev_dep && $io->confirm('Would you like this to be a dev only dependency?', $dev_dep))) {
+                        $install_projects_dev[] = $not_installed_project;
+                    }
+                    else {
+                        $install_projects[] = $not_installed_project;
+                    }
+                }
+            }
+        } else {
+            if ($dev_dep) {
+                $install_projects_dev = array_keys($not_installed_projects);
+            } else {
+                $install_projects = array_keys($not_installed_projects);
+            }
+        }
+        if (!empty($install_projects)) {
+            $command = $this->taskComposerRequire('./composer');
+            foreach ($install_projects as $install_project) {
+                $this->yell("Installing $install_project");
+                $command->dependency($install_project);
+            }
+            $command->run();
+            if (!empty($this->path_to_drush)) {
+                $this->drush('en -y ' . implode(', ', $install_projects));
+            }
+        }
+        if (!empty($install_projects_dev)) {
+            $command = $this->taskComposerRequire('./composer');
+            foreach ($install_projects_dev as $install_project_dev) {
+                $this->yell("Installing $install_project_dev as a development only dependency");
+                $command->dependency($install_project_dev);
+            }
+            $command->dev()->run();
+            if (!empty($this->path_to_drush)) {
+                $this->drush('en -y ' . implode(', ', $install_projects_dev));
+            }
+        }
+    }
+
+    /**
+     * Initialize the Drupal Environment.
+     *
+     * @param SymfonyStyle $io
+     *
+     * @command drupal-env-admin:init
+     *
+     * @return void
+     */
+    public function drupalEnvAdminInit(SymfonyStyle $io): void
+    {
+        // Add required composer requirements.
+        $io->note('Installing required dependencies...');
+        $this->installDependencies($io, false, ['drupal/core-dev' => 'Provides PHP CS'], true);
+        $this->installDependencies($io, false, ['drush/drush' => 'Required for CLI access to Drupal']);
+
+        $io->success('Your project is now ready to install remote (none yet) and local environments');
+
+        $io->success('Configure one or more local environments: ./robo drupal-env-admin:local');
+
+        //$io->success('Configure a remote environment: ./robo drupal-env-admin:remote');
+
+
+    }
+
+    /**
+     * Allows one to install one local environment at a time.
+     *
+     * @param SymfonyStyle $io
+     *
+     * @command drupal-env-admin:local
+     *
+     * @return void
+     */
+    public function drupalEnvAdminLocal(SymfonyStyle $io): void
+    {
+        $locals = [
+            'lando' => [
+                'name' => 'Lando',
+                'installed' => $this->isDependencyInstalled('mpbixal/drupal-env-lando') ? 'Yes, installed' : 'Not installed',
+                'description' => 'https://lando.dev/ Push-button development environments hosted on your computer or in the cloud. Automate your developer workflow and share it with your team.',
+                'package' => 'mpbixal/drupal-env-lando',
+                'post_install_command' => './robo drupal-env-lando:scaffold',
+            ],
+        ];
+        $rows = [];
+        foreach ($locals as $key => $options) {
+            $rows[$key] = [
+                $options['name'],
+                $options['installed'],
+                $options['package'],
+                $options['post_install_command'],
+                $options['description']
+            ];
+        }
+        $io->table(['Name', 'Installed', 'Package', 'Post Install Command', 'Description'], $rows);
+        $not_installed = array_filter($locals, static function (string $key) use ($locals) {
+            return $locals[$key]['installed'] === 'Not installed';
+        }, ARRAY_FILTER_USE_KEY);
+        if (empty($not_installed)) {
+            $io->warning('You have installed all local environments.');
+            return;
+        }
+        $options = array_combine(array_keys($not_installed), array_column($not_installed, 'name'));
+        $options['cancel'] = 'Cancel';
+        $choice = $io->choice('Which environment do you want to install?',  $options, 'cancel');
+        if ($choice === 'cancel') {
+            $io->caution('Cancelled adding a new local environment.');
+        }
+        // Install the Drupal Env Local package.
+        $this->installDependencies($io, false, [$locals[$choice]['package'] => $locals[$choice]['description']]);
+        if ($io->confirm('Success! Would you like to continue the installation and configuration of the new local environment')) {
+            $this->_exec($locals[$choice]['post_install_command']);
+        }
+        // @TODO add confirm to scaffold for lando-admin:init.
+
+    }
+
+    /**
+     * Allows one to install a remote environment.
+     *
+     * @param SymfonyStyle $io
+     *
+     * @command drupal-env-admin:remote
+     *
+     * @return void
+     */
+    public function drupalEnvAdminRemote(SymfonyStyle $io): void
+    {
+        $io->caution('There are no remotes able to be configured at this time, Platform.sh is coming soon.');
+    }
+
+    /**
+     * Called from each local & remote install.
+     *
+     * @return void
+     */
+    protected function installOptionalDependencies(SymfonyStyle $io): void
+    {
+        $flag_name = 'flags.installedOptionalDependencies';
+
+        $already_run_label = '';
+        if ($already_run = Robo::Config()->get($flag_name, 0)) {
+            $already_run_label = " You've already run this before.";
+        }
+        if ($io->confirm("Would you like to install some optional but helpful dependencies?$already_run_label", !$already_run)) {
+            $optional_deps = [
+                'drupal/admin_toolbar' => 'Easy access at the top of the page to admin only links.',
+                'drupal/paragraphs' => 'Allows site builders to create dynamic content for every entity.',
+                'drupal/disable_user_1_edit' => 'Don\'t let anyone but user 1 edit the super user.',
+                'drupal/menu_admin_per_menu' => 'Allows granular per-menu access.',
+                'drupal/role_delegation' => 'Allow a role to give only certain roles (don\'t let them make admins)',
+                'drupal/twig_tweak' => 'Handy shortcuts and helpers when working in Twig',
+                'drupal/twig_field_value' => 'Easily get field values and labels separately in Twig.',
+            ];
+            $this->installDependencies($io, true, $optional_deps, false);
+            $this->installDependencies($io, true, ['drupal/devel' => 'This has many great debugging tools.'], true, true);
+        }
+
+        if (!$already_run) {
+            Robo::Config()->set($flag_name, 1);
+            $this->saveConfig();
+        }
     }
 
 }
