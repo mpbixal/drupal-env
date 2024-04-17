@@ -86,12 +86,4 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function postScaffoldChanges(): void
-    {
-
-    }
-
 }
