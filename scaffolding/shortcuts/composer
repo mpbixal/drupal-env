@@ -60,7 +60,7 @@ if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ]; then
     # then the command has already been recorded. The command given might not
     # even be the last command run, but the last_hash is based on the diff not the command.
     if [[ "$last_hash" = "$hash" ]]; then
-      exit 0
+      exit "${EXIT_STATUS}"
     fi
     branch=$(git rev-parse --abbrev-ref HEAD)
     date=$(date)
