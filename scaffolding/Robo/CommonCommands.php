@@ -386,8 +386,6 @@ class CommonCommands extends Tasks
     /**
      * Initialize the Drupal Environment.
      *
-     * @param SymfonyStyle $io
-     *
      * @command drupal-env-admin:init
      *
      * @return void
@@ -426,8 +424,6 @@ class CommonCommands extends Tasks
 
     /**
      * Allows one to install one local environment at a time.
-     *
-     * @param SymfonyStyle $io
      *
      * @command drupal-env-admin:local
      *
@@ -479,8 +475,6 @@ class CommonCommands extends Tasks
 
     /**
      * Allows one to install a remote environment.
-     *
-     * @param SymfonyStyle $io
      *
      * @command drupal-env-admin:remote
      *
