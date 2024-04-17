@@ -305,7 +305,7 @@ class CommonCommands extends Tasks
      */
     protected function isDependencyInstalled(string $project): bool
     {
-        return $this->_exec("composer show $project  > /dev/null 2>&1")->wasSuccessful();
+        return $this->_exec("./composer show $project  > /dev/null 2>&1")->wasSuccessful();
     }
 
     /**
