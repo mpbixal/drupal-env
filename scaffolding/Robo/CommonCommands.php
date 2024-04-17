@@ -394,7 +394,7 @@ class CommonCommands extends Tasks
     {
         // Create the config sync directory if it does not exist.
         if (!is_dir('config/sync')) {
-            $this->io->note('Creating the config sync directory...');
+            $io->note('Creating the config sync directory...');
             $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
         }
 
