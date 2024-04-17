@@ -107,6 +107,9 @@ abstract class DrupalEnvCommandsBase extends Tasks
 
         $this->disableScaffolding();
 
+        // Take care of any items needed after scaffolding happens.
+        $this->postScaffoldChanges();
+
         // If composer.json was updated, the lock file also has to be updated.
         if ($composer_json_hash_before !== md5_file('composer.json')) {
             $this->_exec($composer_path . ' update --lock');
@@ -121,6 +124,13 @@ abstract class DrupalEnvCommandsBase extends Tasks
      * @return void
      */
     abstract protected function preScaffoldChanges(): void;
+
+    /**
+     * Take care of any items needed after scaffolding happens.
+     *
+     * @return void
+     */
+    abstract protected function postScaffoldChanges(): void;
 
     /**
      * Retrieve the value of composer.json.
