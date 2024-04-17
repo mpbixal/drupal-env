@@ -394,10 +394,26 @@ class CommonCommands extends Tasks
      */
     public function drupalEnvAdminInit(SymfonyStyle $io): void
     {
+        // Create the config sync directory if it does not exist.
+        if (!is_dir('config/sync')) {
+            $this->io->note('Creating the config sync directory...');
+            $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
+        }
+
+        // Allow the root composer to patch from a separate file referenced
+        // from composer.json. This composer.patches.json is written by the
+        // scaffolding and populated with a patch to disable drupal/core from
+        // scaffolding automatically.
+        $io->note('Allowing composer to patch based on what is in ./composer.patches.json');
+        $this->taskComposerConfig('./composer')->set('extra.patches-file', 'composer.patches.json');
+
         // Add required composer requirements.
         $io->note('Installing required dependencies...');
         $this->installDependencies($io, false, ['drupal/core-dev' => 'Provides PHP CS'], true);
-        $this->installDependencies($io, false, ['drush/drush' => 'Required for CLI access to Drupal']);
+        $this->installDependencies($io, false, [
+            'drush/drush' => 'Required for CLI access to Drupal',
+            'cweagans/composer-patches' => 'Patch dependencies and allows one to run drupal/core scaffolding only when one chooses',
+        ]);
 
         $io->success('Your project is now ready to install remote (none yet) and local environments');
 

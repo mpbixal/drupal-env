@@ -18,16 +18,6 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
     protected string $package_name = 'mpbixal/drupal-env';
 
     /**
-     * Update the environment so that the scaffolding can happen, and run it.
-     *
-     * @command drupal-env:scaffold
-     */
-    public function scaffold(): void
-    {
-        $this->updateScaffolding();
-    }
-
-    /**
      * {@inheritdoc}
      */
     protected function preScaffoldChanges(): void
@@ -46,11 +36,6 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
         if (!in_array('./RoboEnv/', $composer_json['autoload']['psr-4'] ?? [])) {
             $composer_json['autoload']['psr-4']['RoboEnv\\'] = './RoboEnv/';
             $this->saveComposerJson($composer_json);
-        }
-
-        // Create the config sync directory.
-        if (!is_dir('config/sync')) {
-            $this->taskFilesystemStack()->mkdir(['config/sync'], 0755)->run();
         }
 
         // Ensure .gitignore exists, so it can be appended to.
