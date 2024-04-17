@@ -22,8 +22,16 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
     {
         $composer_json = $this->getComposerJson();
 
+        // Add cweagans/composer-patches as a dependency. It is needed so that
+        // the patch to drupal core scaffolding can be applied right away
+        // so that drupal core does not remove .editorconfig scaffolding.
+        if (empty($composer_json['require']['cweagans/composer-patches'])) {
+            $this->taskComposerRequire($this->getComposerPath())->dependency('cweagans/composer-patches')->run();
+        }
+
         // Ensure that settings.php is in place, so it can be appended to by the
         // scaffolding.
+        $composer_json = $this->getComposerJson();
         $web_root = $composer_json['extra']['drupal-scaffold']['locations']['web-root'] ?? 'web';
         $web_root = rtrim($web_root, '/');
         if (!file_exists("$web_root/sites/default/settings.php") && file_exists("$web_root/sites/default/default.settings.php")) {
@@ -76,14 +84,6 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
         if (($composer_json['extra']['patches-file'] ?? '') !== 'composer.patches.json') {
             $this->taskComposerConfig($this->getComposerPath())->set('extra.patches-file', 'composer.patches.json')->run();
         }
-
-        // Add cweagans/composer-patches as a dependency. It is needed so that
-        // the patch to drupal core scaffolding can be applied right away
-        // so that drupal core does not remove .editorconfig scaffolding.
-        if (empty($composer_json['require']['cweagans/composer-patches'])) {
-            $this->taskComposerRequire($this->getComposerPath())->dependency('cweagans/composer-patches')->run();
-        }
-
     }
 
     /**
