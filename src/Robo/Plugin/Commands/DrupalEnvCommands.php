@@ -71,6 +71,19 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
             $this->saveComposerJson($composer_json);
         }
 
+        // Ensure that the patches-file is set.
+        $composer_json = $this->getComposerJson();
+        if (($composer_json['extra']['patches-file'] ?? '') !== 'composer.patches.json') {
+            $this->taskComposerConfig($this->getComposerPath())->set('extra.patches-file', 'composer.patches.json')->run();
+        }
+
+        // Add cweagans/composer-patches as a dependency. It is needed so that
+        // the patch to drupal core scaffolding can be applied right away
+        // so that drupal core does not remove .editorconfig scaffolding.
+        if (empty($composer_json['require']['cweagans/composer-patches'])) {
+            $this->taskComposerRequire($this->getComposerPath())->dependency('cweagans/composer-patches')->run();
+        }
+
     }
 
     /**
@@ -78,20 +91,7 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
      */
     protected function postScaffoldChanges(): void
     {
-        // The following has to be done before composer.lock is updated,
-        // otherwise drupal/core will overwrite .editorconfig.
-        // Ensure that that the patches-file is set.
-        $composer_json = $this->getComposerJson();
-        if (($composer_json['extra']['patches-file'] ?? '') !== 'composer.patches.json') {
-            $this->taskComposerConfig($this->getComposerPath())->set('extra.patches-file', 'composer.patches.json')->run();
-        }
 
-        // Add cweagans/composer-patches as a depenency. It is needed so that
-        // the patch to drupal core scaffolding can be applied right away
-        // so that drupal core does not remove .editorconfig scaffolding.
-        if (empty($composer_json['require']['cweagans/composer-patches'])) {
-            $this->taskComposerRequire($this->getComposerPath())->dependency('cweagans/composer-patches')->run();
-        }
     }
 
 }
