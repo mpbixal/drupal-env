@@ -309,7 +309,7 @@ class CommonCommands extends Tasks
     }
 
     /**
-     * Is the composer package installed?
+     * Install one or more dependencies.
      *
      * @param SymfonyStyle $io
      * @param bool $ask_before_install
@@ -320,9 +320,11 @@ class CommonCommands extends Tasks
      *   If true, all $projects will be installed as dev dependencies.
      * @param bool $ask_dev_dep
      *   If true, it will ask for each dep if it should be a dev dep.
-     * @return void
+     *
+     * @return bool
+     *   True if there was no error.
      */
-    protected function installDependencies(SymfonyStyle $io, bool $ask_before_install, array $projects = [], bool $dev_dep = false, bool $ask_dev_dep = false): void
+    protected function installDependencies(SymfonyStyle $io, bool $ask_before_install, array $projects = [], bool $dev_dep = false, bool $ask_dev_dep = false): bool
     {
         if (!$ask_before_install && $ask_dev_dep) {
             throw new \Exception('You must ask before install if you want to ask for a dev dependency.');
@@ -333,7 +335,7 @@ class CommonCommands extends Tasks
         }, ARRAY_FILTER_USE_KEY);
         // All installed, nothing to do.
         if (empty($not_installed_projects)) {
-            return;
+            return true;
         }
         if ($ask_before_install) {
             $install_projects = [];
@@ -359,6 +361,7 @@ class CommonCommands extends Tasks
                 $install_projects = array_keys($not_installed_projects);
             }
         }
+        $success = [];
         if (!empty($install_projects)) {
             $command = $this->taskComposerRequire('./composer');
             foreach ($install_projects as $install_project) {
@@ -367,7 +370,7 @@ class CommonCommands extends Tasks
             }
             $command->run();
             if (!empty($this->path_to_drush)) {
-                $this->drush('en -y ' . implode(', ', $install_projects));
+                $success[] = $this->drush('en -y ' . implode(', ', $install_projects))->wasSuccessful();
             }
         }
         if (!empty($install_projects_dev)) {
@@ -378,9 +381,10 @@ class CommonCommands extends Tasks
             }
             $command->dev()->run();
             if (!empty($this->path_to_drush)) {
-                $this->drush('en -y ' . implode(', ', $install_projects_dev));
+                $success[] = $this->drush('en -y ' . implode(', ', $install_projects_dev));
             }
         }
+        return in_array(false, $success);
     }
 
     /**
@@ -453,11 +457,15 @@ class CommonCommands extends Tasks
         $choice = $io->choice('Which environment do you want to install?',  $options, 'cancel');
         if ($choice === 'cancel') {
             $io->caution('Cancelled adding a new local environment.');
+            return;
         }
         // Install the Drupal Env Local package.
-        $this->installDependencies($io, false, [$locals[$choice]['package'] => $locals[$choice]['description']]);
-        if ($io->confirm('Success! Would you like to continue the installation and configuration of the new local environment')) {
-            $this->_exec($locals[$choice]['post_install_command']);
+        if ($this->installDependencies($io, false, [$locals[$choice]['package'] => $locals[$choice]['description']])) {
+            if ($io->confirm('Success! Would you like to continue the installation and configuration of the new local environment')) {
+                $this->_exec($locals[$choice]['post_install_command']);
+            }
+        } else {
+            $io->warning("There was an issue installing {$locals[$choice]['package']}.");
         }
         // @TODO add confirm to scaffold for lando-admin:init.
 
