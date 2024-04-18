@@ -368,7 +368,7 @@ class CommonCommands extends Tasks
                 $this->yell("Installing $install_project");
                 $command->dependency($install_project);
             }
-            $command->run();
+            $success[] = $command->run()->wasSuccessful();
             if (!empty($this->path_to_drush)) {
                 $success[] = $this->drush('en -y ' . implode(', ', $install_projects))->wasSuccessful();
             }
@@ -379,12 +379,12 @@ class CommonCommands extends Tasks
                 $this->yell("Installing $install_project_dev as a development only dependency");
                 $command->dependency($install_project_dev);
             }
-            $command->dev()->run();
+            $success[] = $command->dev()->run()->wasSuccessful();
             if (!empty($this->path_to_drush)) {
-                $success[] = $this->drush('en -y ' . implode(', ', $install_projects_dev));
+                $success[] = $this->drush('en -y ' . implode(', ', $install_projects_dev))->wasSuccessful();
             }
         }
-        return in_array(false, $success);
+        return !in_array(false, $success);
     }
 
     /**
