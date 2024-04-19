@@ -2,6 +2,8 @@
 
 namespace DrupalEnv\Robo\Plugin\Commands;
 
+use Drupal\Component\Utility\Crypt;
+
 /**
  * Provide commands to handle installation tasks.
  *
@@ -20,11 +22,17 @@ class DrupalEnvCommands extends DrupalEnvCommandsBase
      */
     protected function preScaffoldChanges(): void
     {
-        $composer_json = $this->getComposerJson();
+        // Create a unique hash_salt for this site before Drupal is installed,
+        // that way settings.php does need to be written to which causes
+        // $database to be added which is already set.
+        if (!file_exists('drupal_hash_salt.txt')) {
+            file_put_contents('drupal_hash_salt.txt', Crypt::randomBytesBase64(55));
+        }
 
         // Add cweagans/composer-patches as a dependency. It is needed so that
         // the patch to drupal core scaffolding can be applied right away
         // so that drupal core does not remove .editorconfig scaffolding.
+        $composer_json = $this->getComposerJson();
         if (empty($composer_json['require']['cweagans/composer-patches'])) {
             $this->taskComposerRequire($this->getComposerPath())->dependency('cweagans/composer-patches')->run();
         }
