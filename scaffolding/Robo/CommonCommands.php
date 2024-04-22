@@ -26,14 +26,6 @@ class CommonCommands extends Tasks
     protected string $path_to_drush;
 
     /**
-     * Constructor.
-     */
-    public function __construct()
-    {
-        Robo::loadConfiguration(['roboConfDrupalEnv.yml']);
-    }
-
-    /**
      * Create a v4 UUID.
      *
      * @param string|null $data
@@ -77,15 +69,55 @@ class CommonCommands extends Tasks
     }
 
     /**
-     * Save the robo config.
+     * Save a key to the config.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @param bool $local
      *
      * @return bool
      */
-    protected function saveConfig(): bool
+    protected function saveConfig(string $key, mixed $value, bool $local = false): bool
     {
+        $config_file = $this->switchConfig($local);
+        Robo::Config()->set($key, $value);
         $config = Robo::Config()->export();
         unset($config['options']);
-        return $this->saveYml('roboConfDrupalEnv.yml', $config);
+        return $this->saveYml($config_file, $config);
+    }
+
+    /**
+     * Get a config value.
+     *
+     * @param string $key
+     * @param null $default
+     * @param bool $local
+     *
+     * @return mixed
+     */
+    protected function getConfig(string $key, $default = NULL, bool $local = false): mixed
+    {
+        $this->switchConfig($local);
+        return Robo::config()->get($key, $default);
+    }
+
+    /**
+     * Switch between the active config.
+     *
+     * @param bool $local
+     *
+     * @return string
+     */
+    protected function switchConfig(bool $local = false): string
+    {
+        if ($local) {
+            $config_file = 'roboConfDrupalEnv.local.yml';
+            Robo::loadConfiguration([$config_file]);
+        } else {
+            $config_file = 'roboConfDrupalEnv.yml';
+            Robo::loadConfiguration([$config_file]);
+        }
+        return $config_file;
     }
 
     /**
@@ -490,11 +522,11 @@ class CommonCommands extends Tasks
      */
     protected function installOptionalDependencies(SymfonyStyle $io): void
     {
-        $flag_name = 'flags.installedOptionalDependencies';
+        $flag_name = 'flags.common.installedOptionalDependenciesAlreadyRun';
 
         $already_run_label = '';
-        if ($already_run = Robo::Config()->get($flag_name, 0)) {
-            $already_run_label = " You've already run this before.";
+        if ($already_run = $this->getConfig($flag_name, 0)) {
+            $already_run_label = " This has already been run for this project, but can be run until their are no modules to enable, if you'd like.";
         }
         if ($io->confirm("Would you like to install some optional but helpful dependencies?$already_run_label", !$already_run)) {
             $optional_deps = [
@@ -511,8 +543,7 @@ class CommonCommands extends Tasks
         }
 
         if (!$already_run) {
-            Robo::Config()->set($flag_name, 1);
-            $this->saveConfig();
+            $this->saveConfig($flag_name, 1);
         }
     }
 
