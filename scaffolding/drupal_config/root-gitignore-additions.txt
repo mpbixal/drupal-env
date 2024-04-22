@@ -44,5 +44,6 @@ Thumbs.db
 .history/
 # Built Visual Studio Code Extensions
 *.vsix
-
+# Shared DrupalEnv Robo configuration
+roboConfDrupalEnv.local.yml
 #### End added by Drupal Env project scaffolding ####
