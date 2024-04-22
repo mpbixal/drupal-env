@@ -518,9 +518,11 @@ class CommonCommands extends Tasks
     /**
      * Called from each local & remote install.
      *
+     * @command drupal-env-admin:optional-dependencies
+     *
      * @return void
      */
-    protected function installOptionalDependencies(SymfonyStyle $io): void
+    public function drupalEnvAdmininstallOptionalDependencies(SymfonyStyle $io): void
     {
         $flag_name = 'flags.common.installedOptionalDependenciesAlreadyRun';
 
