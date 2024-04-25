@@ -294,7 +294,7 @@ class CommonCommands extends Tasks
     protected function drush(string|array $args = '', array $exec_options = ['print_output' => true]): Result
     {
         if (empty($this->path_to_drush)) {
-            throw new \Exception(get_called_class() . ' must implement set the property path_to_drush');
+            $this->path_to_drush = './drsh';
         }
         $task = $this->taskExec($this->path_to_drush);
         if (is_array($args)) {
@@ -522,7 +522,7 @@ class CommonCommands extends Tasks
      *
      * @return void
      */
-    public function drupalEnvAdmininstallOptionalDependencies(SymfonyStyle $io): void
+    public function drupalEnvAdminInstallOptionalDependencies(SymfonyStyle $io): void
     {
         $flag_name = 'flags.common.installedOptionalDependenciesAlreadyRun';
 
@@ -546,6 +546,66 @@ class CommonCommands extends Tasks
 
         if (!$already_run) {
             $this->saveConfig($flag_name, 1);
+        }
+    }
+
+    /**
+     * Choose your default and/or admin themes.
+     *
+     * @command drupal-env-admin:theme-set
+     *
+     * @return void
+     */
+    public function drupalEnvAdminThemeSet(SymfonyStyle $io): void {
+        $this->isDrupalInstalled();
+        foreach ([
+                     'default' => [
+                         'required',
+                         "Would you like to set a default theme? Olivero provides some styling while Stark is a blank slate. The default theme will be used for both admin and non-admin pages if no admin theme is set.",
+                     ],
+                     'admin' => [
+                         'not-required',
+                         'Would you like to set an admin only theme? Claro is the recommended Admin theme. The admin theme will replace the default theme for admin pages only.',
+                     ]] as $theme_type => $values) {
+            $output = $this->drush([
+                'config-get',
+                'system.theme',
+                $theme_type
+            ], ['print_output' => FALSE])->getOutputData();
+            $default_theme = str_replace("'system.theme:$theme_type': ", '', $output);
+            $io->note($values[1]);
+            $io->info('Options are below for a theme (Use the machine name inside "()"');
+            $this->drush([
+                'pm-list',
+                '--type=theme',
+            ])->getOutputData();
+            $default_theme_option = '';
+            $additional = '';
+            if ($values[0] === 'required') {
+                $default_theme_option = $default_theme;
+            } else {
+                $additional = " (Leave blank to not set a $theme_type theme)";
+            }
+            $theme_choice = $io->ask("Choose a $theme_type theme, current '$default_theme'$additional", $default_theme_option);
+            if ($theme_choice === $default_theme || $default_theme === 'null' && $theme_choice === '') {
+                $io->note('Leaving as is...');
+                continue;
+            }
+            if (strlen($theme_choice)) {
+                $this->drush(['theme:enable', $theme_choice]);
+            } else {
+                // This is supposed to work according to
+                // https://github.com/drush-ops/drush/pull/4780 but it does not.
+                // Luckily setting a bad value here will not cause the site to
+                // break.
+                $theme_choice = 'null';
+            }
+            // Set as the default $theme_type.
+            $this->drush(['config-set', 'system.theme', $theme_type, $theme_choice, '-y']);
+            if ($theme_type === 'admin' && $theme_choice !== 'null') {
+                $node_edit_choice = $io->choice('Would you like to use the admin theme for node edit pages? Note that if one does not have the permission to view the admin theme, they will see the default theme.', ['no', 'yes'], 'yes');
+                $this->drush(['config-set', 'node.settings', 'use_admin_theme', $node_edit_choice === 'yes' ? 1 : 0, '-y']);
+            }
         }
     }
 
