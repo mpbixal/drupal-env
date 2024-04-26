@@ -516,6 +516,22 @@ class CommonCommands extends Tasks
     }
 
     /**
+     * After a local is installed and started, run commands.
+     *
+     * @command drupal-env-admin:post-local-started
+     *
+     * @return void
+     */
+    public function drupalEnvAdminPostLocalStarted(SymfonyStyle $io): void
+    {
+        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo drupal-env-admin:optional-dependencies`. Press enter to continue.');
+        $this->_exec('./robo drupal-env-admin:optional-dependencies');
+
+        $io->ask('Offering to install and enable themes. Can be re-run with `./robo drupal-env-admin:theme-set`. Press enter to continue.');
+        $this->_exec('./robo drupal-env-admin:theme-set');
+    }
+
+    /**
      * Called from each local & remote install.
      *
      * @command drupal-env-admin:optional-dependencies
