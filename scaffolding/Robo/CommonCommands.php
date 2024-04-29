@@ -422,11 +422,11 @@ class CommonCommands extends Tasks
     /**
      * Initialize the Drupal Environment.
      *
-     * @command drupal-env-admin:init
+     * @command common-admin:init
      *
      * @return void
      */
-    public function drupalEnvAdminInit(SymfonyStyle $io): void
+    public function commonAdminInit(SymfonyStyle $io): void
     {
         // Create the config sync directory if it does not exist.
         if (!is_dir('config/sync')) {
@@ -441,9 +441,9 @@ class CommonCommands extends Tasks
 
         $io->success('Your project is now ready to install remote (none yet) and local environments');
 
-        $io->success('Configure one or more local environments: ./robo drupal-env-admin:local');
+        $io->success('Configure one or more local environments: ./robo common-admin:local');
 
-        //$io->success('Configure a remote environment: ./robo drupal-env-admin:remote');
+        //$io->success('Configure a remote environment: ./robo common-admin:remote');
 
 
     }
@@ -451,11 +451,11 @@ class CommonCommands extends Tasks
     /**
      * Allows one to install one local environment at a time.
      *
-     * @command drupal-env-admin:local
+     * @command common-admin:local
      *
      * @return void
      */
-    public function drupalEnvAdminLocal(SymfonyStyle $io): void
+    public function commonAdminLocal(SymfonyStyle $io): void
     {
         $locals = [
             'lando' => [
@@ -506,11 +506,11 @@ class CommonCommands extends Tasks
     /**
      * Allows one to install a remote environment.
      *
-     * @command drupal-env-admin:remote
+     * @command common-admin:remote
      *
      * @return void
      */
-    public function drupalEnvAdminRemote(SymfonyStyle $io): void
+    public function commonAdminRemote(SymfonyStyle $io): void
     {
         $io->caution('There are no remotes able to be configured at this time, Platform.sh is coming soon.');
     }
@@ -518,27 +518,27 @@ class CommonCommands extends Tasks
     /**
      * After a local is installed and started, run commands.
      *
-     * @command drupal-env-admin:post-local-started
+     * @command common-admin:post-local-started
      *
      * @return void
      */
-    public function drupalEnvAdminPostLocalStarted(SymfonyStyle $io): void
+    public function commonAdminPostLocalStarted(SymfonyStyle $io): void
     {
-        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo drupal-env-admin:optional-dependencies`. Press enter to continue.');
-        $this->_exec('./robo drupal-env-admin:optional-dependencies');
+        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo common-admin:optional-dependencies`. Press enter to continue.');
+        $this->_exec('./robo common-admin:optional-dependencies');
 
-        $io->ask('Offering to install and enable themes. Can be re-run with `./robo drupal-env-admin:theme-set`. Press enter to continue.');
-        $this->_exec('./robo drupal-env-admin:theme-set');
+        $io->ask('Offering to install and enable themes. Can be re-run with `./robo common-admin:theme-set`. Press enter to continue.');
+        $this->_exec('./robo common-admin:theme-set');
     }
 
     /**
      * Called from each local & remote install.
      *
-     * @command drupal-env-admin:optional-dependencies
+     * @command common-admin:optional-dependencies
      *
      * @return void
      */
-    public function drupalEnvAdminInstallOptionalDependencies(SymfonyStyle $io): void
+    public function commonAdminInstallOptionalDependencies(SymfonyStyle $io): void
     {
         $flag_name = 'flags.common.installedOptionalDependenciesAlreadyRun';
 
@@ -568,11 +568,11 @@ class CommonCommands extends Tasks
     /**
      * Choose your default and/or admin themes.
      *
-     * @command drupal-env-admin:theme-set
+     * @command common-admin:theme-set
      *
      * @return void
      */
-    public function drupalEnvAdminThemeSet(SymfonyStyle $io): void {
+    public function commonAdminThemeSet(SymfonyStyle $io): void {
         $this->isDrupalInstalled();
         foreach ([
                      'default' => [
