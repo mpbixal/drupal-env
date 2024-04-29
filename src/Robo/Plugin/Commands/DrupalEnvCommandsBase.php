@@ -3,6 +3,7 @@
 namespace DrupalEnv\Robo\Plugin\Commands;
 
 use Robo\Tasks;
+use RoboEnv\Robo\Plugin\Commands\LandoCommands;
 
 /**
  * Provide commands to handle installation tasks.
@@ -63,7 +64,11 @@ abstract class DrupalEnvCommandsBase extends Tasks
     }
 
     /**
-     * Update the environment so that the scaffolding can happen, and run it.
+     * Scaffold a single project.
+     *
+     * This enables the scaffolding, runs it, then disables it from being
+     * scaffolded when composer drupal:scaffold is called. Scaffolding is
+     * manual process so that a proper order can be done.
      *
      * @command drupal-env:scaffold
      *
@@ -78,6 +83,25 @@ abstract class DrupalEnvCommandsBase extends Tasks
             $this->disable_pre_scaffolding = true;
         }
         $this->updateScaffolding();
+    }
+
+    /**
+     * Run the scaffolding for each project needs it.
+     *
+     * @command drupal-env:scaffold-all
+     */
+    public function scaffoldAll(): void
+    {
+        // Drupal core.
+        $this->_exec('vendor/bin/robo drupal-env:scaffold drupal/core');
+        // Common scaffold (this file).
+        $this->_exec('vendor/bin/robo drupal-env:scaffold');
+        // Scaffold all other drupal env projects if they exist.
+        // Lando scaffold.
+        // @todo: Determine if some sort of event system is possible for this.
+        if (class_exists(LandoCommands::class)) {
+            $this->_exec('vendor/bin/robo drupal-env-lando:scaffold');
+        }
     }
 
     /**
