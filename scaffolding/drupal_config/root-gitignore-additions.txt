@@ -46,4 +46,7 @@ Thumbs.db
 *.vsix
 # Shared DrupalEnv Robo configuration
 roboConfDrupalEnv.local.yml
+# ./php.sh bin path
+.php.env
+
 #### End added by Drupal Env project scaffolding ####

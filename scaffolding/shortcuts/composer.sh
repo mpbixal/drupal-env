@@ -2,26 +2,10 @@
 
 cd "$(dirname "$0")" || exit
 
-# If the .env file exists, use it to populate BIN_PATH_COMPOSER.
-if [ -f .env ]; then
-  . .env
-fi
-
-BIN_PATH_COMPOSER=composer
-
 EXIT_STATUS=0
 
-if ! command -v "${BIN_PATH_COMPOSER}" &> /dev/null; then
-  if command -v docker &> /dev/null; then
-    BIN_PATH_COMPOSER='docker run --rm -i --tty -v $PWD:/app composer:2'
-  else
-    echo 'Either composer or docker must be installed to continue'
-  fi
-  exit 1
-fi
-
 set -x
-${BIN_PATH_COMPOSER} "$@" || EXIT_STATUS=$?
+./php.sh vendor/bin/robo common:composer -- "$@" || EXIT_STATUS=$?
 set +x
 
 # Support MacOS and Linux.

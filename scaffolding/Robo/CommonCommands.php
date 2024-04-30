@@ -13,17 +13,8 @@ use Symfony\Component\Yaml\Yaml;
  *
  * @class RoboFile
  */
-class CommonCommands extends Tasks
+abstract class CommonCommands extends Tasks
 {
-
-    /**
-     * The path to Drush.
-     *
-     * Should be set by the commands that extend this task.
-     *
-     * @var string
-     */
-    protected string $path_to_drush;
 
     /**
      * Create a v4 UUID.
@@ -118,6 +109,74 @@ class CommonCommands extends Tasks
             Robo::loadConfiguration([$config_file]);
         }
         return $config_file;
+    }
+
+    /**
+     * Call the local environment method for command $name.
+     *
+     * @param string $name
+     *   The name of the command.
+     * @param bool $inside
+     *   Are we inside the local env?
+     *
+     * @return string
+     */
+    public function getLocalEnvCommand(string $name, bool $inside = true): string
+    {
+        return call_user_func_array([$this->getDefaultLocalEnvironment()['commands_class'], $name . 'Command'], [$inside]);
+    }
+
+    /**
+     * Get the unique name for an environment.
+     *
+     * @return string
+     */
+    abstract protected function getName(): string;
+
+    /**
+     * Retrieve the path to composer inside and outside the environment.
+     *
+     * @param $inside
+     *   If inside the environment.
+     *
+     * @return string
+     */
+    abstract public static function composerCommand(bool $inside = TRUE): string;
+
+    /**
+     * Retrieve the path to composer inside and outside the environment.
+     *
+     * @param $inside
+     *   If inside the environment.
+     *
+     * @return string
+     */
+    abstract public static function drushCommand(bool $inside = TRUE): string;
+
+    /**
+     * Set the default local environment so commands can be routed.
+     *
+     * @param string $name
+     *
+     * @return void
+     */
+    public function setDefaultLocalEnvironment(string $name): void {
+        $this->saveConfig('flags.common.defaultLocalEnvironment.name', $name, true);
+        $this->saveConfig('flags.common.defaultLocalEnvironment.commands_class', static::class, true);
+    }
+
+    /**
+     * Retrieve the current default local environment.
+     *
+     * @return array
+     */
+    public function getDefaultLocalEnvironment(): array
+    {
+        $config = $this->getConfig('flags.common.defaultLocalEnvironment', [], true);
+        if (empty($config)) {
+            throw new \Exception('Cannot call this until the local environment has been initialized.');
+        }
+        return $config;
     }
 
     /**
@@ -280,9 +339,11 @@ class CommonCommands extends Tasks
     }
 
     /**
-     * Call drush for your platform.
+     * Call drush for your local environment.
      *
-     * @param string|array $args
+     * @command common:drush
+     *
+     * @param array $args
      *   All arguments and options passed to drush.
      * @param array $exec_options
      *   Additional options passed to the robo taskExec().
@@ -291,21 +352,168 @@ class CommonCommands extends Tasks
      *
      * @throws \Exception
      */
-    protected function drush(string|array $args = '', array $exec_options = ['print_output' => true]): Result
+    public function drush(SymfonyStyle $io, array $args, array $exec_options = ['print_output' => true]): Result
     {
-        if (empty($this->path_to_drush)) {
-            $this->path_to_drush = './drsh';
-        }
-        $task = $this->taskExec($this->path_to_drush);
-        if (is_array($args)) {
+        $path_to_drush = $this->commonGetDrushPath($io);
+        $task = $this->taskExec($path_to_drush);
+        if (!empty($args)) {
             $task->args($args);
-        } else {
-            $task->arg($args);
         }
         return $task
             ->printOutput($exec_options['print_output'])
             ->run()
             ->stopOnFail();
+    }
+
+    /**
+     * Get the path to Drush.
+     *
+     * @command common:drush-path
+     *
+     * @throws \Exception
+     */
+    public function commonGetDrushPath(SymfonyStyle $io): string
+    {
+        return $this->getBinaryLocation($io, 'drush', '', false);
+    }
+
+    /**
+     * Call composer on the local machine.
+     *
+     * @command common:composer
+     *
+     * @param array $args
+     *    All arguments and options passed to composer.
+     * @param array $exec_options
+     *    Additional options passed to the robo taskExec().
+     *
+     * @return \Robo\Result
+     *
+     * @throws \Exception
+     */
+    public function composer(SymfonyStyle $io, array $args, array $exec_options = ['print_output' => true]): Result
+    {
+        $path_to_composer = $this->getBinaryLocation($io, 'composer', 'docker run --rm -i --tty -v $PWD:/app composer:2');
+        $task = $this->taskExec($path_to_composer);
+        if (!empty($args)) {
+            $task->args($args);
+        }
+        return $task
+            ->printOutput($exec_options['print_output'])
+            ->run()
+            ->stopOnFail();
+    }
+
+    /**
+     * Determine the path to $name.
+     *
+     * @param \Symfony\Component\Console\Style\SymfonyStyle $io
+     * @param $name
+     *   The name of the binary.
+     * @param $docker_run
+     *   The fallback docker run command to use $name.
+     *
+     * @return string
+     *   The full path to the binary.
+     *
+     * @throws \Exception
+     */
+    protected function getBinaryLocation(SymfonyStyle $io, $name, string $docker_run = '', $local_machine_allowed = true): string
+    {
+        // If inside the local environment, always run that local environments
+        // internal command.
+        if (FALSE !== getenv('DRUPAL_ENV_LOCAL')) {
+            return $this->getLocalEnvCommand($name);
+            // @TODO add remote command here.
+            //} elseif (FALSE !== getenv('DRUPAL_ENV_REMOTE')) {
+            //    return $this->getRemoteEnvCommand('composer');
+            // If not inside the local env or the remote env, only allow calls to
+            // to local env  if $local_machine_allowed is false. For example, from
+            // local machine, you can only run drush through your local env.
+        } elseif (!$local_machine_allowed) {
+            return $this->getLocalEnvCommand($name, false);
+        }
+        // If not local or remote, then prompt the user how they want to access
+        // the binary.
+        return $this->askForBinaryLocation($io, $name, $docker_run);
+    }
+
+    /**
+     * Ask the user how they want their local to use $name.
+     *
+     * @param \Symfony\Component\Console\Style\SymfonyStyle $io
+     * @param $name
+     *   The name of the binary.
+     * @param $docker_run
+     *   The fallback docker run command to use $name.
+     *
+     * @return string
+     *   The full path to the binary.
+     *
+     * @throws \Exception
+     */
+    protected function askForBinaryLocation(SymfonyStyle $io, $name, string $docker_run = ''): string
+    {
+        // This flag stores how their local should access composer.
+        $flag_name = 'flags.common.paths.' . $name;
+        $path_config = $this->getConfig($flag_name, [], true);
+        // If false, this means to use the local and we're not inside the
+        // environment right now.
+        if (!empty($path_config)) {
+            switch ($path_config['type']) {
+                case 'local_environment':
+                    return $this->getLocalEnvCommand('composer', false);
+
+                case 'local_machine':
+                    if (!empty($path_config['path']) && $this->executableFilePath($path_config['path'])) {
+                        return $path_config['path'];
+                    }
+                    $path = $path_config['path'] ?? '<not set>';
+                    $io->warning("Your path to $name ({$path}) no longer exists.");
+                    break;
+
+                case 'docker':
+                    return $docker_run;
+
+            }
+        }
+
+        $io->warning("You have not chosen where $name lives on your system yet.");
+
+        $io->note("Running $name on your own machine is usually faster than running through docker.");
+        $choice = $io->choice(
+            "Would you like to run $name from your local machine, through your local environment (usually uses docker), or directly through docker?",
+            ['Local Machine', 'Local Environment', 'Docker']
+        );
+        switch ($choice) {
+            case 'Local Machine':
+                $default_full_path = $this->executableFilePath($name);
+                $io->note("Showing possible locations for $name");
+                $this->_exec("whereis $name");
+                $binary_location = $io->ask("Enter the full path to $name", $default_full_path);
+                if (!strlen($name)) {
+                    throw new \Exception('A path is required.');
+                }
+                if (!$this->executableFilePath($binary_location)) {
+                    throw new \Exception("The path '$binary_location' does not exist on your machine.");
+                }
+                $this->saveConfig($flag_name, ['type' => 'local_machine', 'path' => $binary_location], true);
+                return $binary_location;
+
+            case 'Local Environment':
+                $this->saveConfig($flag_name, ['type' => 'local_environment'], true);
+                return $this->getLocalEnvCommand('composer', false);
+
+            case 'Docker':
+                if ($this->executableFilePath('docker')) {
+                    $this->saveConfig($flag_name, ['type' => 'docker'], true);
+                    return $docker_run;
+                } else {
+                    throw new \Exception('Docker could not be found on your system.');
+                }
+
+        }
+        throw new \Exception("Invalid operation when choosing path to $name");
     }
 
     /**
@@ -315,8 +523,8 @@ class CommonCommands extends Tasks
      *
      * @throws \Exception
      */
-    protected function isDrupalInstalled(bool $return = false): bool {
-        $result = $this->drush(['status', '--fields=bootstrap'], ['print_output' => false]);
+    protected function isDrupalInstalled(SymfonyStyle $io, bool $return = false): bool {
+        $result = $this->drush($io, ['status', '--fields=bootstrap'], ['print_output' => false]);
         $installed = $result->getMessage() === 'Drupal bootstrap : Successful';
         if ($return) {
             return $installed;
@@ -401,8 +609,11 @@ class CommonCommands extends Tasks
                 $command->dependency($install_project);
             }
             $success[] = $command->run()->wasSuccessful();
-            if (!empty($this->path_to_drush)) {
-                $success[] = $this->drush('en -y ' . implode(', ', $install_projects))->wasSuccessful();
+            try {
+                $this->commonGetDrushPath($io);
+                $success[] = $this->drush($io, ['en',  '-y' , implode(', ', $install_projects)])->wasSuccessful();
+            } catch (\Exception $exception) {
+                // Do nothing.
             }
         }
         if (!empty($install_projects_dev)) {
@@ -412,8 +623,11 @@ class CommonCommands extends Tasks
                 $command->dependency($install_project_dev);
             }
             $success[] = $command->dev()->run()->wasSuccessful();
-            if (!empty($this->path_to_drush)) {
-                $success[] = $this->drush('en -y ' . implode(', ', $install_projects_dev))->wasSuccessful();
+            try {
+                $this->commonGetDrushPath($io);
+                $success[] = $this->drush($io, ['en', '-y', implode(', ', $install_projects_dev)])->wasSuccessful();
+            } catch (\Exception $exception) {
+                // Do nothing.
             }
         }
         return !in_array(false, $success);
@@ -583,7 +797,7 @@ class CommonCommands extends Tasks
                          'not-required',
                          'Would you like to set an admin only theme? Claro is the recommended Admin theme. The admin theme will replace the default theme for admin pages only.',
                      ]] as $theme_type => $values) {
-            $output = $this->drush([
+            $output = $this->drush($io, [
                 'config-get',
                 'system.theme',
                 $theme_type
@@ -591,7 +805,7 @@ class CommonCommands extends Tasks
             $default_theme = str_replace("'system.theme:$theme_type': ", '', $output);
             $io->note($values[1]);
             $io->info('Options are below for a theme (Use the machine name inside "()"');
-            $this->drush([
+            $this->drush($io, [
                 'pm-list',
                 '--type=theme',
             ])->getOutputData();
@@ -608,7 +822,7 @@ class CommonCommands extends Tasks
                 continue;
             }
             if (strlen($theme_choice)) {
-                $this->drush(['theme:enable', $theme_choice]);
+                $this->drush($io, ['theme:enable', $theme_choice]);
             } else {
                 // This is supposed to work according to
                 // https://github.com/drush-ops/drush/pull/4780 but it does not.
@@ -617,10 +831,10 @@ class CommonCommands extends Tasks
                 $theme_choice = 'null';
             }
             // Set as the default $theme_type.
-            $this->drush(['config-set', 'system.theme', $theme_type, $theme_choice, '-y']);
+            $this->drush($io, ['config-set', 'system.theme', $theme_type, $theme_choice, '-y']);
             if ($theme_type === 'admin' && $theme_choice !== 'null') {
                 $node_edit_choice = $io->choice('Would you like to use the admin theme for node edit pages? Note that if one does not have the permission to view the admin theme, they will see the default theme.', ['no', 'yes'], 'yes');
-                $this->drush(['config-set', 'node.settings', 'use_admin_theme', $node_edit_choice === 'yes' ? 1 : 0, '-y']);
+                $this->drush($io, ['config-set', 'node.settings', 'use_admin_theme', $node_edit_choice === 'yes' ? 1 : 0, '-y']);
             }
         }
     }
