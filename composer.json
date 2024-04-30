@@ -165,19 +165,19 @@
                     "path": "scaffolding/shortcuts/composer",
                     "overwrite": true
                 },
-                "[project-root]/drsh": {
+                "[project-root]/drush.sh": {
                     "mode": "replace",
-                    "path": "scaffolding/shortcuts/drsh",
+                    "path": "scaffolding/shortcuts/drush.sh",
                     "overwrite": true
                 },
-                "[project-root]/php": {
+                "[project-root]/php.sh": {
                     "mode": "replace",
-                    "path": "scaffolding/shortcuts/php",
+                    "path": "scaffolding/shortcuts/php.sh",
                     "overwrite": true
                 },
-                "[project-root]/robo": {
+                "[project-root]/robo.sh": {
                     "mode": "replace",
-                    "path": "scaffolding/shortcuts/robo",
+                    "path": "scaffolding/shortcuts/robo.sh",
                     "overwrite": true
                 }
             }
