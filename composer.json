@@ -150,9 +150,19 @@
                     "path": "scaffolding/Robo/editorconfig",
                     "overwrite": true
                 },
+                "[project-root]/RoboEnv/Robo/Plugin/Commands/CommonAbstract.php": {
+                    "mode": "replace",
+                    "path": "scaffolding/Robo/CommonAbstract.php",
+                    "overwrite": true
+                },
                 "[project-root]/RoboEnv/Robo/Plugin/Commands/CommonCommands.php": {
                     "mode": "replace",
                     "path": "scaffolding/Robo/CommonCommands.php",
+                    "overwrite": true
+                },
+                "[project-root]/RoboEnv/Robo/Plugin/Commands/CommonTrait.php": {
+                    "mode": "replace",
+                    "path": "scaffolding/Robo/CommonTrait.php",
                     "overwrite": true
                 },
                 "[project-root]/RoboFile.php": {
