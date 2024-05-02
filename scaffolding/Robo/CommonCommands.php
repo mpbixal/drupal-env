@@ -175,9 +175,9 @@ class CommonCommands extends Tasks
 
         $io->success('Your project is now ready to install remote (none yet) and local environments');
 
-        $io->success('Configure one or more local environments: ./robo common-admin:local');
+        $io->success('Configure one or more local environments: ./robo.sh common-admin:local');
 
-        //$io->success('Configure a remote environment: ./robo common-admin:remote');
+        //$io->success('Configure a remote environment: ./robo.sh common-admin:remote');
 
 
     }
@@ -197,7 +197,7 @@ class CommonCommands extends Tasks
                 'installed' => $this->isDependencyInstalled('mpbixal/drupal-env-lando') ? 'Yes, installed' : 'Not installed',
                 'description' => 'https://lando.dev/ Push-button development environments hosted on your computer or in the cloud. Automate your developer workflow and share it with your team.',
                 'package' => 'mpbixal/drupal-env-lando',
-                'post_install_command' => './robo drupal-env-lando:scaffold',
+                'post_install_command' => './robo.sh drupal-env-lando:scaffold',
             ],
         ];
         $rows = [];
@@ -258,11 +258,11 @@ class CommonCommands extends Tasks
      */
     public function commonAdminPostLocalStarted(SymfonyStyle $io): void
     {
-        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo common-admin:optional-dependencies`. Press enter to continue.');
-        $this->_exec('./robo common-admin:optional-dependencies');
+        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo.sh common-admin:optional-dependencies`. Press enter to continue.');
+        $this->_exec('./robo.sh common-admin:optional-dependencies');
 
-        $io->ask('Offering to install and enable themes. Can be re-run with `./robo common-admin:theme-set`. Press enter to continue.');
-        $this->_exec('./robo common-admin:theme-set');
+        $io->ask('Offering to install and enable themes. Can be re-run with `./robo.sh common-admin:theme-set`. Press enter to continue.');
+        $this->_exec('./robo.sh common-admin:theme-set');
     }
 
     /**
