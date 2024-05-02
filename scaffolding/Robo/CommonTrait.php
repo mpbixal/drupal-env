@@ -384,7 +384,12 @@ trait CommonTrait
      */
     protected function isDependencyInstalled(string $project): bool
     {
-        return $this->_exec("./composer.sh show $project  > /dev/null 2>&1")->wasSuccessful();
+        // Remove the version constraint if it has one.
+        [$project] = explode(':', $project);
+        // Had to remove ' > /dev/null 2>&1' from this, so it shows errors now
+        // because that will hide the prompts for ./composer.sh the first
+        // time it runs.
+        return $this->_exec("./composer.sh show $project")->wasSuccessful();
     }
 
     /**
