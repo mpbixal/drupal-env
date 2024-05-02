@@ -200,7 +200,7 @@ class CommonCommands extends Tasks
                 'installed' => $this->isDependencyInstalled('mpbixal/drupal-env-lando') ? 'Yes, installed' : 'Not installed',
                 'description' => 'https://lando.dev/ Push-button development environments hosted on your computer or in the cloud. Automate your developer workflow and share it with your team.',
                 'package' => 'mpbixal/drupal-env-lando:dev-main',
-                'post_install_command' => './robo.sh lando-admin:init',
+                'post_install_commands' => ['./robo.sh drupal-env-lando:scaffold', './robo.sh lando-admin:init'],
             ],
         ];
         $rows = [];
@@ -209,8 +209,8 @@ class CommonCommands extends Tasks
                 $options['name'],
                 $options['installed'],
                 $options['package'],
-                $options['post_install_commands'],
-                $options['description']
+                implode(', ', $options['post_install_commands']),
+                $options['description'],
             ];
         }
         $io->table(['Name', 'Installed', 'Package', 'Post Install Commands', 'Description'], $rows);
@@ -230,10 +230,14 @@ class CommonCommands extends Tasks
         }
         // Install the Drupal Env Local package.
         if ($this->installDependencies($io, false, [$locals[$choice]['package'] => $locals[$choice]['description']])) {
-            $this->_exec('./robo.sh drupal-env:scaffold-all');
             if ($io->confirm('Success! Would you like to continue the installation and configuration of the new local environment')) {
-                $this->_exec($locals[$choice]['post_install_command']);
+                foreach ($locals[$choice]['post_install_commands'] as $post_install_command) {
+                    $this->_exec($post_install_command);
+                }
             }
+            // Scaffold all, in case the order matters for the plugin just
+            // installed.
+            $this->_exec('./robo.sh drupal-env:scaffold-all');
         } else {
             $io->warning("There was an issue installing {$locals[$choice]['package']}.");
         }
