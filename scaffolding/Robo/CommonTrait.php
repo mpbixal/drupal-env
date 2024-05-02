@@ -107,7 +107,33 @@ trait CommonTrait
         return $config_file;
     }
 
+    /**
+     * Call the local environment method for command $name.
+     *
+     * @param string $name
+     *   The name of the command.
+     * @param bool $inside
+     *   Are we inside the local env?
+     *
+     * @return string
+     */
+    public function getLocalEnvCommand(string $name, bool $inside = true): string
+    {
+        return call_user_func_array([$this->getDefaultLocalEnvironment()['commands_class'], $name . 'Command'], [$inside]);
+    }
 
+    /**
+     * Set the default local environment so commands can be routed.
+     *
+     * @param string $name
+     *
+     * @return void
+     */
+    public function setDefaultLocalEnvironment(string $name): void
+    {
+        $this->saveConfig('flags.common.defaultLocalEnvironment.name', $name, true);
+        $this->saveConfig('flags.common.defaultLocalEnvironment.commands_class', static::class, true);
+    }
 
     /**
      * Retrieve the current default local environment.
