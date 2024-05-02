@@ -49,7 +49,7 @@ if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = "true" ]; then
     branch=$(git rev-parse --abbrev-ref HEAD)
     date=$(date)
     email=$(git config user.name)
-    echo -e "$hash|$email|$branch|$date|./composer $*" >> composer.log
+    echo -e "$hash|$email|$branch|$date|./composer.sh $*" >> composer.log
   fi
 fi
 

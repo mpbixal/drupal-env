@@ -358,7 +358,7 @@ trait CommonTrait
      */
     protected function isDependencyInstalled(string $project): bool
     {
-        return $this->_exec("./composer show $project  > /dev/null 2>&1")->wasSuccessful();
+        return $this->_exec("./composer.sh show $project  > /dev/null 2>&1")->wasSuccessful();
     }
 
     /**
@@ -416,7 +416,7 @@ trait CommonTrait
         }
         $success = [];
         if (!empty($install_projects)) {
-            $command = $this->taskComposerRequire('./composer');
+            $command = $this->taskComposerRequire('./composer.sh');
             foreach ($install_projects as $install_project) {
                 $this->yell("Installing $install_project");
                 $command->dependency($install_project);
@@ -430,7 +430,7 @@ trait CommonTrait
             }
         }
         if (!empty($install_projects_dev)) {
-            $command = $this->taskComposerRequire('./composer');
+            $command = $this->taskComposerRequire('./composer.sh');
             foreach ($install_projects_dev as $install_project_dev) {
                 $this->yell("Installing $install_project_dev as a development only dependency");
                 $command->dependency($install_project_dev);

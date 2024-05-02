@@ -52,8 +52,8 @@ abstract class DrupalEnvCommandsBase extends Tasks
      */
     protected function getComposerPath(): string
     {
-        /*if (`which ./composer`) {
-          return './composer';
+        /*if (`which ./composer.sh`) {
+          return './composer.sh';
         } else*/
         if (`which composer`) {
             return 'composer';
