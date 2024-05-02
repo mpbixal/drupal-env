@@ -315,7 +315,7 @@ class CommonCommands extends Tasks
      * @return void
      */
     public function commonAdminThemeSet(SymfonyStyle $io): void {
-        $this->isDrupalInstalled();
+        $this->isDrupalInstalled($io);
         foreach ([
                      'default' => [
                          'required',
