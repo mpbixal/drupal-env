@@ -453,11 +453,15 @@ trait CommonTrait
                 $command->dependency($install_project);
             }
             $success[] = $command->run()->wasSuccessful();
-            try {
-                $this->commonGetDrushPath($io);
-                $success[] = $this->drush($io, ['en',  '-y' , implode(', ', $install_projects)])->wasSuccessful();
-            } catch (\Exception $exception) {
-                // Do nothing.
+            $modules = $this->enableOnlyDrupalProjects($install_projects);
+            if (!empty($modules)) {
+                try {
+                    $this->commonGetDrushPath($io);
+
+                    $success[] = $this->drush($io, ['en', '-y', implode(', ', $modules)])->wasSuccessful();
+                } catch (\Exception $exception) {
+                    // Do nothing.
+                }
             }
         }
         if (!empty($install_projects_dev)) {
@@ -467,14 +471,37 @@ trait CommonTrait
                 $command->dependency($install_project_dev);
             }
             $success[] = $command->dev()->run()->wasSuccessful();
-            try {
-                $this->commonGetDrushPath($io);
-                $success[] = $this->drush($io, ['en', '-y', implode(', ', $install_projects_dev)])->wasSuccessful();
-            } catch (\Exception $exception) {
-                // Do nothing.
+            $modules = $this->enableOnlyDrupalProjects($install_projects_dev);
+            if (!empty($modules)) {
+                try {
+                    $this->commonGetDrushPath($io);
+                    $success[] = $this->drush($io, ['en', '-y', implode(', ', $install_projects_dev)])->wasSuccessful();
+                } catch (\Exception $exception) {
+                    // Do nothing.
+                }
             }
         }
         return !in_array(false, $success);
+    }
+
+    /**
+     * Filter a list a composer deps to only the module name.
+     *
+     * @param array $projects
+     *   A list of composer deps.
+     *
+     * @return array
+     */
+    protected function enableOnlyDrupalProjects(array $projects): array
+    {
+        $return = [];
+        foreach ($projects as $project) {
+            [$vendor, $name] = explode('/', $project);
+            if ($vendor === 'drupal') {
+                $return[] = $name;
+            }
+        }
+        return $return;
     }
 
 }
