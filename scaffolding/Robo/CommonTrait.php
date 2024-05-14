@@ -3,6 +3,7 @@
 namespace RoboEnv\Robo\Plugin\Commands;
 
 use Robo\Robo;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Yaml\Yaml;
 
@@ -11,6 +12,43 @@ use Symfony\Component\Yaml\Yaml;
  */
 trait CommonTrait
 {
+
+    /**
+     * Just stop the program to show a message.
+     *
+     * @param string $message
+     *   A message to show.
+     *
+     * @return void
+     */
+    protected function enterToContinue(SymfonyStyle $io, string $message): void
+    {
+        $io->askQuestion(new Question($message, 'Enter to continue, no input required'));
+    }
+
+    /**
+     * Introduce user's to the common shortcuts.
+     *
+     * @param bool $run_only_once
+     *   This will do nothing if true and it has been run.
+     *
+     * @return void
+     */
+    protected function introduceCommonShortcuts(SymfonyStyle $io, bool $run_only_once = true): void
+    {
+        if ($run_only_once && $this->getConfig('flags.common.introducedToCommonShortcuts', false, true)) {
+            return;
+        }
+        $this->saveConfig('flags.common.introducedToCommonShortcuts', true, true);
+        $this->enterToContinue($io, 'You will now be stepped through the common shortcuts that are available to you.');
+        $io->comment('./robo.sh: (https://github.com/consolidation/robo) This project is a task runner like gulp, but for PHP. It is used in place of bash scripts to interact with the environment. It will always run through your local machine\'s PHP (8.1+).');
+        $io->comment('./composer.sh: (https://getcomposer.org/) This allows you to use interact with your environment\'s dependencies. It should always be used instead any other composer because it writes to a custom "composer.log" file that documents all composer commands that change the contents of your composer.lock. This makes it easier to solve merge conflicts.');
+        $io->comment('./php.sh: (https://www.php.net/) Allows you to choose a PHP version on your machine that may be required by a project in case you have multiple installed or need multiple.');
+        $io->comment('./drush.sh: (https://www.drush.org) Allows you to interact with your local environment\'s installation of Drupal. Therefore, a local environment must be installed, configured, and a site installed in order to work.');
+        $this->enterToContinue($io, 'You will now be stepped through configuring where composer AND php (if you have not already) live for your project, PHP must exist on your local machine but you can optionally choose Composer from your local environment (as long as a local exists) or Docker, but it is recommended to install Composer (2) locally (speed).');
+        $this->_exec('./composer.sh');
+        $this->enterToContinue($io, 'If you would like to reset your path selections or get this message again, please run "./robo.sh common:shortcuts-help".');
+    }
 
     /**
      * Create a v4 UUID.
@@ -386,10 +424,25 @@ trait CommonTrait
     {
         // Remove the version constraint if it has one.
         [$project] = explode(':', $project);
-        // Had to remove ' > /dev/null 2>&1' from this, so it shows errors now
-        // because that will hide the prompts for ./composer.sh the first
-        // time it runs.
-        return $this->_exec("./composer.sh show $project")->wasSuccessful();
+        return $this->_exec("./composer.sh show $project > /dev/null 2>&1")->wasSuccessful();
+    }
+
+    /**
+     * Is a module enabled?
+     *
+     * @param string $module
+     *   A module name.
+     *
+     * @return bool
+     */
+    protected function isModuleEnabled(string $module): bool
+    {
+        return '1' === $this->taskExec(
+                sprintf('./drush.sh php-eval "echo \Drupal::moduleHandler()->moduleExists(\'%s\');"', $module)
+            )
+                ->printOutput(false)
+                ->run()
+                ->getMessage();
     }
 
     /**
@@ -446,42 +499,70 @@ trait CommonTrait
             }
         }
         $success = [];
+        $enable_modules = [];
         if (!empty($install_projects)) {
-            $command = $this->taskComposerRequire('./composer.sh');
+            $command = $this->taskComposerRequire('./composer.sh')->arg('-W');
             foreach ($install_projects as $install_project) {
                 $this->yell("Installing $install_project");
                 $command->dependency($install_project);
             }
             $success[] = $command->run()->wasSuccessful();
-            $modules = $this->enableOnlyDrupalProjects($install_projects);
-            if (!empty($modules)) {
-                try {
-                    $this->commonGetDrushPath($io);
-
-                    $success[] = $this->drush($io, ['en', '-y', implode(', ', $modules)])->wasSuccessful();
-                } catch (\Exception $exception) {
-                    // Do nothing.
-                }
-            }
+            $enable_modules = array_merge($this->composerDependenciesToDrupalModuleName($install_projects), $enable_modules);
         }
         if (!empty($install_projects_dev)) {
-            $command = $this->taskComposerRequire('./composer.sh');
+            $command = $this->taskComposerRequire('./composer.sh')->arg('w');
             foreach ($install_projects_dev as $install_project_dev) {
                 $this->yell("Installing $install_project_dev as a development only dependency");
                 $command->dependency($install_project_dev);
             }
             $success[] = $command->dev()->run()->wasSuccessful();
-            $modules = $this->enableOnlyDrupalProjects($install_projects_dev);
-            if (!empty($modules)) {
-                try {
-                    $this->commonGetDrushPath($io);
-                    $success[] = $this->drush($io, ['en', '-y', implode(', ', $install_projects_dev)])->wasSuccessful();
-                } catch (\Exception $exception) {
-                    // Do nothing.
-                }
+            $enable_modules = array_merge($this->composerDependenciesToDrupalModuleName($install_projects_dev), $enable_modules);
+        }
+        // Only enable modules that are not already enabled.
+        foreach ($enable_modules as $key => $module) {
+            if ($this->isModuleEnabled($module)) {
+                unset($enable_modules[$key]);
             }
         }
+        if (!empty($enable_modules)) {
+            $success[] = $this->drush($io, [
+                'en',
+                '-y',
+                implode(', ', $enable_modules)
+            ])->wasSuccessful();
+        }
         return !in_array(false, $success);
+    }
+
+    /**
+     * Remove a composer dependency.
+     *
+     * @param $project
+     *   A composer dependency.
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    protected function uninstallDependency(SymfonyStyle $io, $project): bool
+    {
+        // Remove the version constraint if it has one.
+        [$project] = explode(':', $project);
+        $success = true;
+        $module_name = $this->composerDependenciesToDrupalModuleName([$project]);
+        $module_name = end($module_name);
+        // If project is equal to module name, then they just passed a module.
+        // Therefore, only the module uninstallation has to happen.
+        if ($project !== $module_name && !$this->isDependencyInstalled($project)) {
+            return $success;
+        }
+        if ($this->isModuleEnabled($module_name)) {
+            $success = $this->drush($io, ['pm-uninstall', '-y', $module_name])
+                ->wasSuccessful();
+        }
+        if ($project !== $module_name && $io->confirm('Would you like to remove the "' . $project . '" composer dependency right now? Only do so right away if this module is not enabled on production, otherwise, you will get errors when trying to uninstall and removing the dependency at the same time.')) {
+            $success = $this->taskComposerRemove('./composer.sh')->arg($project)->run()->wasSuccessful();
+        }
+        return $success;
     }
 
     /**
@@ -492,11 +573,15 @@ trait CommonTrait
      *
      * @return array
      */
-    protected function enableOnlyDrupalProjects(array $projects): array
+    protected function composerDependenciesToDrupalModuleName(array $projects): array
     {
         $return = [];
         foreach ($projects as $project) {
             [$vendor, $name] = explode('/', $project);
+            if (!str_contains($name, ":")) {
+                $name .= ":";
+            }
+            [$name, $stability] = explode(':', $name);
             if ($vendor === 'drupal') {
                 $return[] = $name;
             }
