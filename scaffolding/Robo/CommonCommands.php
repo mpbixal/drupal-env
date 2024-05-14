@@ -110,8 +110,7 @@ class CommonCommands extends Tasks
         }
         return $task
             ->printOutput($exec_options['print_output'])
-            ->run()
-            ->stopOnFail();
+            ->run();
     }
 
     /**
