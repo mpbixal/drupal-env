@@ -17,7 +17,7 @@ if [[ ! (-v DRUPAL_ENV_LOCAL || -v DRUPAL_ENV_REMOTE) && ! -f .php.env ]]; then
   echo "Possible PHP paths to use:"
   whereis php
   echo ""
-  echo "The default version of PHP in your \$PATH. If PHP is already in your path and you want to use that version, just hit enter."
+  echo "The following is the default version of PHP in your \$PATH. If PHP is already in your path and you want to use that version, just hit enter."
   which php
   echo ""
   read -p "Please enter the path to PHP on your local machine: " custom_php_path
