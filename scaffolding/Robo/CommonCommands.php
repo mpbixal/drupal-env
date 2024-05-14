@@ -161,6 +161,10 @@ class CommonCommands extends Tasks
      */
     public function commonAdminInit(SymfonyStyle $io): void
     {
+        // Introduce the common shortcuts so one knows how they work and to
+        // configure them.
+        $this->introduceCommonShortcuts($io);
+
         // Create the config sync directory if it does not exist.
         if (!is_dir('config/sync')) {
             $io->note('Creating the config sync directory...');
@@ -182,6 +186,23 @@ class CommonCommands extends Tasks
         //$io->success('Configure a remote environment: ./robo.sh common-admin:remote');
 
 
+    }
+
+    /**
+     * Allows the user to reset their shortcut paths and see help about them.
+     *
+     * @command common:shortcuts-help
+     *
+     * @return void
+     */
+    public function commonShortcutsHelp(SymfonyStyle $io): void
+    {
+        if ($this->confirm('Would you like to reset your previous selections for PHP & composer paths?')) {
+            $this->taskFilesystemStack()->remove('.php.env')->run();
+            // Reset all common paths.
+            $this->saveConfig('flags.common.paths', [], true);
+        }
+        $this->introduceCommonShortcuts($io, false);
     }
 
     /**
@@ -265,10 +286,10 @@ class CommonCommands extends Tasks
      */
     public function commonAdminPostLocalStarted(SymfonyStyle $io): void
     {
-        $io->ask('Offering to install optional composer dependencies. Can be re-run with `./robo.sh common-admin:optional-dependencies`. Press enter to continue.');
+        $this->enterToContinue($io, 'Offering to install optional composer dependencies. Can be re-run with `./robo.sh common-admin:optional-dependencies`.');
         $this->_exec('./robo.sh common-admin:optional-dependencies');
 
-        $io->ask('Offering to install and enable themes. Can be re-run with `./robo.sh common-admin:theme-set`. Press enter to continue.');
+        $this->enterToContinue($io, 'Offering to install and enable themes. Can be re-run with `./robo.sh common-admin:theme-set`.');
         $this->_exec('./robo.sh common-admin:theme-set');
     }
 
