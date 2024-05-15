@@ -2,7 +2,7 @@
 
 namespace RoboEnv\Robo\Plugin\Commands;
 
-use Robo\Robo;
+use Dflydev\DotAccessData\Data;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Yaml\Yaml;
@@ -104,11 +104,10 @@ trait CommonTrait
      */
     protected function saveConfig(string $key, mixed $value, bool $local = false): bool
     {
-        $config_file = $this->switchConfig($local);
-        Robo::Config()->set($key, $value);
-        $config = Robo::Config()->export();
-        unset($config['options']);
-        return $this->saveYml($config_file, $config);
+        [$config_file, $config_data] = $this->switchConfig($local);
+        $config_data->set($key, $value);
+        $config_data_string = $config_data->export();
+        return $this->saveYml($config_file, $config_data_string);
     }
 
     /**
@@ -122,8 +121,8 @@ trait CommonTrait
      */
     protected function getConfig(string $key, $default = NULL, bool $local = false): mixed
     {
-        $this->switchConfig($local);
-        return Robo::config()->get($key, $default);
+        [$config_file, $config_data] = $this->switchConfig($local);
+        return $config_data->get($key, $default);
     }
 
     /**
@@ -131,18 +130,21 @@ trait CommonTrait
      *
      * @param bool $local
      *
-     * @return string
+     * @return array
      */
-    protected function switchConfig(bool $local = false): string
+    protected function switchConfig(bool $local = false): array
     {
         if ($local) {
             $config_file = 'roboConfDrupalEnv.local.yml';
-            Robo::loadConfiguration([$config_file]);
         } else {
             $config_file = 'roboConfDrupalEnv.yml';
-            Robo::loadConfiguration([$config_file]);
         }
-        return $config_file;
+        if (file_exists($config_file)) {
+            $config = Yaml::parse(file_get_contents($config_file)) ?? [];
+        } else {
+            $config = [];
+        }
+        return [$config_file, new Data($config)];
     }
 
     /**
@@ -155,7 +157,7 @@ trait CommonTrait
      *
      * @return string
      */
-    public function getLocalEnvCommand(string $name, bool $inside = true): string
+    protected function getLocalEnvCommand(string $name, bool $inside = true): string
     {
         return call_user_func_array([$this->getDefaultLocalEnvironment()['commands_class'], $name . 'Command'], [$inside]);
     }
@@ -167,7 +169,7 @@ trait CommonTrait
      *
      * @return void
      */
-    public function setDefaultLocalEnvironment(string $name): void
+    protected function setDefaultLocalEnvironment(string $name): void
     {
         $this->saveConfig('flags.common.defaultLocalEnvironment.name', $name, true);
         $this->saveConfig('flags.common.defaultLocalEnvironment.commands_class', static::class, true);
@@ -180,7 +182,7 @@ trait CommonTrait
      *
      * @throws \Exception
      */
-    public function getDefaultLocalEnvironment(): array
+    protected function getDefaultLocalEnvironment(): array
     {
         $config = $this->getConfig('flags.common.defaultLocalEnvironment', [], true);
         if (empty($config)) {
@@ -192,7 +194,7 @@ trait CommonTrait
     /**
      * Has a default local environment been chosen?
      */
-    public function isDefaultLocalEnvironmentSet(): bool
+    protected function isDefaultLocalEnvironmentSet(): bool
     {
         try {
             $this->getDefaultLocalEnvironment();
