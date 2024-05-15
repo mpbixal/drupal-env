@@ -173,6 +173,10 @@ class CommonCommands extends Tasks
 
         // Add required composer requirements.
         $io->note('Installing required dependencies...');
+        // Don't any modules that need to be enabled. The local environment
+        // probably won't be ready at this time, unless this is being re-run
+        // after a local is installed. Therefore, you'll have a dependency that
+        // might be required but not enabled.
         $this->installDependencies($io, false, ['drupal/core-dev' => 'Provides PHP CS'], true);
         $this->installDependencies($io, false, ['drush/drush' => 'Required for CLI access to Drupal']);
 
@@ -197,10 +201,12 @@ class CommonCommands extends Tasks
      */
     public function commonShortcutsHelp(SymfonyStyle $io): void
     {
-        if ($this->confirm('Would you like to reset your previous selections for PHP & composer paths?')) {
+        if ($io->confirm('Would you like to reset your previous selections for PHP & composer paths?', false)) {
             $this->taskFilesystemStack()->remove('.php.env')->run();
             // Reset all common paths.
-            $this->saveConfig('flags.common.paths', [], true);
+            // Oddity: You can't set to empty array if an array value is already
+            // set. Instead, you have to set it to null.
+            $this->saveConfig('flags.common.paths', null, true);
         }
         $this->introduceCommonShortcuts($io, false);
     }
@@ -370,6 +376,13 @@ class CommonCommands extends Tasks
                 continue;
             }
             if (strlen($theme_choice)) {
+                // Attempt to make it the machine name if they typed the display
+                // name.
+                $theme_choice = strtolower(str_replace(' ', '_', $theme_choice));
+                // Stable 9 does not follow the normal form.
+                if ($theme_choice === 'stable_9') {
+                    $theme_choice = 'stable9';
+                }
                 $this->drush($io, ['theme:enable', $theme_choice]);
             } else {
                 // This is supposed to work according to
@@ -381,8 +394,8 @@ class CommonCommands extends Tasks
             // Set as the default $theme_type.
             $this->drush($io, ['config-set', 'system.theme', $theme_type, $theme_choice, '-y']);
             if ($theme_type === 'admin' && $theme_choice !== 'null') {
-                $node_edit_choice = $io->choice('Would you like to use the admin theme for node edit pages? Note that if one does not have the permission to view the admin theme, they will see the default theme.', ['no', 'yes'], 'yes');
-                $this->drush($io, ['config-set', 'node.settings', 'use_admin_theme', $node_edit_choice === 'yes' ? 1 : 0, '-y']);
+                $node_edit_choice = $io->confirm('Would you like to use the admin theme for node edit pages? Note that if one does not have the permission to view the admin theme, they will see the default theme.');
+                $this->drush($io, ['config-set', 'node.settings', 'use_admin_theme', (int) $node_edit_choice, '-y']);
             }
         }
     }
