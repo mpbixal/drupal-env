@@ -177,6 +177,8 @@ trait CommonTrait
      * Retrieve the current default local environment.
      *
      * @return array
+     *
+     * @throws \Exception
      */
     public function getDefaultLocalEnvironment(): array
     {
@@ -185,6 +187,19 @@ trait CommonTrait
             throw new \Exception('Cannot call this until the local environment has been initialized.');
         }
         return $config;
+    }
+
+    /**
+     * Has a default local environment been chosen?
+     */
+    public function isDefaultLocalEnvironmentSet(): bool
+    {
+        try {
+            $this->getDefaultLocalEnvironment();
+            return true;
+        } catch (\Exception $exception) {
+            return false;
+        }
     }
 
 
@@ -257,8 +272,6 @@ trait CommonTrait
     /**
      * Print out the software requirements table.
      *
-     * @param SymfonyStyle $io
-     *   The style object.
      * @param array $rows
      *   All rows of the table.
      * @param bool $missing_software
@@ -510,13 +523,17 @@ trait CommonTrait
             $enable_modules = array_merge($this->composerDependenciesToDrupalModuleName($install_projects), $enable_modules);
         }
         if (!empty($install_projects_dev)) {
-            $command = $this->taskComposerRequire('./composer.sh')->arg('w');
+            $command = $this->taskComposerRequire('./composer.sh')->arg('-W');
             foreach ($install_projects_dev as $install_project_dev) {
                 $this->yell("Installing $install_project_dev as a development only dependency");
                 $command->dependency($install_project_dev);
             }
             $success[] = $command->dev()->run()->wasSuccessful();
             $enable_modules = array_merge($this->composerDependenciesToDrupalModuleName($install_projects_dev), $enable_modules);
+        }
+        // If a local has not been set up, no need to enable.
+        if (!$this->isDefaultLocalEnvironmentSet()) {
+            $enable_modules = [];
         }
         // Only enable modules that are not already enabled.
         foreach ($enable_modules as $key => $module) {
